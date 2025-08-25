@@ -150,12 +150,31 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
     this.presetVehicles = await this.dbService.executeSyncDBStmt("SELECT", QueryList.GET_VEHICLE_TARE_WEIGHT);
   }
 
-  isSeachFieldEnabled(searchFieldName) {
-    if (this.searchFields) {
-      return Object.keys(this.searchFields).indexOf(searchFieldName) > -1 &&
-        (this.searchFields[searchFieldName]["inOutMode"] === "GENERIC" ||
-          this.weighment.weighmentType.toLowerCase().indexOf(this.searchFields[searchFieldName]["inOutMode"].toLowerCase()) > -1);
+  async loadSearchFields() {
+    try {
+      const result = await this.dbService.executeSyncDBStmt("SELECT", QueryList.GET_SEARCH_FIELDS);
+      if (result && result.length > 0) {
+        const search_fields = {};
+        result.forEach(ele => {
+          if (ele['enable'] === 1) {
+            search_fields[ele['fieldName']] = ele;
+          }
+        });
+        sessionStorage.setItem("search_fields", JSON.stringify(search_fields));
+        this.searchFields = search_fields;
+      }
+    } catch (error) {
+      console.error('Error loading search fields:', error);
     }
+  }
+
+  isSeachFieldEnabled(searchFieldName) {
+    if (this.searchFields && this.searchFields[searchFieldName]) {
+      return (this.searchFields[searchFieldName]["inOutMode"] === "GENERIC" ||
+              this.searchFields[searchFieldName]["inOutMode"] === "BOTH" ||
+              this.weighment.weighmentType.toLowerCase().indexOf(this.searchFields[searchFieldName]["inOutMode"].toLowerCase()) > -1);
+    }
+    return false;
   }
 
   updateCurrentWeight() {
@@ -518,8 +537,8 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
     var stmt = QueryList.UPDATE_SECOND_WEIGHMENT_DETAIL
       .replace("{material}", this.weighmentDetail.material ? this.weighmentDetail.material: null)
       .replace("{supplier}", this.weighmentDetail.supplier)
-      .replace("{customer}", this.weighmentDetail.customer ? this.weighmentDetail.customer:null)
-      .replace("{secondWeighBridge}", this.weighbridge)
+      .replace("{customer}", this.dbService.escapeString(this.weighmentDetail.customer)?this.dbService.escapeString(this.weighmentDetail.customer):"")
+      .replace("{secondWeighBridge}", this.weighbridge)  
       .replace("{secondWeight}", this.weighmentDetail.secondWeight.toString())
       .replace("{secondUnit}", this.weighmentDetail.secondUnit ? this.weighmentDetail.secondUnit: "Kg")
       .replace("{secondWeightUser}", this.authService.getTokenOrOtherStoredData("id"))
