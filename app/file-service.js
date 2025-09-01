@@ -263,14 +263,59 @@ ipcMain.handle("captureImage", async (event, args) => {
 // });
 
 ipcMain.handle("loadImage", async (event, args) => {
-  if(args[0]===undefined){
-    args[0] = "g:/test.jpg";
+  try {
+    if(!args || !args[0] || args[0] === undefined || args[0] === null || args[0] === ""){
+      console.log("No image path provided");
+      return "";
+    }
+    
+    var imagePath = args[0];
+    console.log("Attempting to load image from path:", imagePath);
+    
+    // Check if file exists
+    if (!fs.existsSync(imagePath)) {
+      console.log("Image file does not exist at path:", imagePath);
+      return "";
+    }
+    
+    // Check file size (avoid loading very large files)
+    const stats = fs.statSync(imagePath);
+    if (stats.size > 10 * 1024 * 1024) { // 10MB limit
+      console.log("Image file too large:", stats.size, "bytes");
+      return "";
+    }
+    
+    var _img = fs.readFileSync(imagePath).toString('base64');
+    
+    // Determine image type from file extension
+    var extension = imagePath.toLowerCase().split('.').pop();
+    var mimeType = 'image/jpeg'; // default
+    
+    switch(extension) {
+      case 'png':
+        mimeType = 'image/png';
+        break;
+      case 'gif':
+        mimeType = 'image/gif';
+        break;
+      case 'bmp':
+        mimeType = 'image/bmp';
+        break;
+      case 'webp':
+        mimeType = 'image/webp';
+        break;
+      default:
+        mimeType = 'image/jpeg';
+    }
+    
+    var _out = `<img width="200" height="200" src="data:${mimeType};base64,${_img}" style="object-fit: contain;" />`;
+    console.log("Image loaded successfully, size:", _img.length, "characters");
+    return _out;
+    
+  } catch (error) {
+    console.error("Error loading image:", error);
+    return "";
   }
-  log.error("Image path - "+args[0]);
-  var _img = fs.readFileSync(args[0]).toString('base64');
-  //example for .png
-  var _out = '<img width=200 height=200 src="data:image/png;base64,' + _img + '" />';
-  return _out;
 });
 
 function saveBlob(blob, path) {

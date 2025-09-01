@@ -1,14 +1,14 @@
 {
-  "appId": "com.notamedia.accubridge",
-  "productName": "Accubridge",
-  "buildVersion": "0.0.1",
+  "appId": "com.notamedia.accubridgev2",
+  "productName": "Accubridge v2",
+  "buildVersion": "0.0.2",
   "files": [
     "**/*"
   ],
   "directories": {
     "app": "app",
     "buildResources": "build-res",
-    "output": "release"
+    "output": "release-v0.0.2"
   },
   "extraResources": [ ],
   "extraFiles": [ "env.json", "print.py" ],
@@ -16,9 +16,15 @@
   "win": {
     "target": [
       "nsis"
-    ]
+    ],
+    "artifactName": "${productName} Setup ${version}.${ext}"
   },
   "nsis": {
-    "runAfterFinish": false
+    "runAfterFinish": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Accubridge v2",
+    "allowToChangeInstallationDirectory": true,
+    "oneClick": false
   }
 }

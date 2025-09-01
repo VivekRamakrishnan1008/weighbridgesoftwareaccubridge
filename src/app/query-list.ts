@@ -3,9 +3,9 @@ export class QueryList{
   //Weighment
   static readonly INSERT_WEIGHMENT: string = "INSERT INTO weighment(rstNo, vehicleNo, scrollNo, \
   reqId, gatePassNo, weighmentType, poDetails, transporterCode, transporterName, status, \
-  createdAt, scrollDate, reqIdDate, misc) \
+  createdAt, scrollDate, reqIdDate, misc, extras) \
   VALUES({rstNo}, '{vehicleNo}', '{scrollNo}', '{reqId}', '{gatePassNo}', '{weighmentType}', \
-  '{poDetails}', '{transporterCode}', '{transporterName}', '{status}', GETDATE(), '{scrollDate}', '{reqIdDate}', '{misc}');";
+  '{poDetails}', '{transporterCode}', '{transporterName}', '{status}', GETDATE(), '{scrollDate}', '{reqIdDate}', '{misc}', '{serialNo}|{location}');";
   static readonly UPDATE_WEIGHMENT: string = "UPDATE weighment SET scrollNo='{scrollNo}', reqId='{reqId}', \
         gatePassNo='{gatePassNo}', weighmentType='{weighmentType}', transporterCode='{transporterCode}', vehicleNo='{vehicleNo}', \
         transporterName='{transporterName}', status='{status}', scrollDate='{scrollDate}', reqIdDate='{reqIdDate}', misc='{misc}' WHERE rstNo={rstNo}";

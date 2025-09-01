@@ -282,10 +282,29 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
       return;
     }
     var status = "pending";
-    if ((this.isComplete && this.weighmentDetail.secondWeight && /^\d+$/.test(this.weighmentDetail.secondWeight.toString())
-      && this.weighmentDetail.firstWeight && /^\d+$/.test(this.weighmentDetail.firstWeight.toString())) || this.enterFirstWeightManually) {
+
+    console.log(status, "status -----------------------")
+    console.log(this.isComplete, "isComplete -----------------------")
+    console.log(this.weighmentDetail.secondWeight, "secondWeight -----------------------")
+    console.log(this.weighmentDetail.firstWeight, "firstWeight -----------------------")
+    console.log(this.enterFirstWeightManually, "enterFirstWeightManually -----------------------")
+    console.log(/^\d+$/.test(this.weighmentDetail.firstWeight.toString()), "firstWeightValid -----------------------")
+    console.log(this.weighmentDetail.secondWeight ? /^\d+$/.test(this.weighmentDetail.secondWeight.toString()) : false, "secondWeightValid -----------------------")
+
+    // Check if weighment should be marked as complete
+    const hasValidFirstWeight = this.weighmentDetail.firstWeight !== undefined && this.weighmentDetail.firstWeight !== null && /^\d+$/.test(this.weighmentDetail.firstWeight.toString());
+    const hasValidSecondWeight = this.weighmentDetail.secondWeight !== undefined && this.weighmentDetail.secondWeight !== null && /^\d+$/.test(this.weighmentDetail.secondWeight.toString());
+    
+    if (this.isComplete && hasValidFirstWeight && hasValidSecondWeight) {
+      console.log("Completing weighment ==============================================");
       status = "complete";
+    } else if (this.enterFirstWeightManually && hasValidFirstWeight && hasValidSecondWeight) {
+      status = "complete";
+      console.log("Completing weighment ==============================================");
     }
+    
+    console.log("Final status determined:", status);
+    
     //Initial weighment
     if (this.weighment.rstNo === undefined) {
       await this.createWeighment(status);      
@@ -314,19 +333,41 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
         var currDate = new Date();
         result['sub-folder'] = `${currDate.getUTCDate()}-${currDate.getUTCMonth()+1}-${currDate.getUTCFullYear()}`;
         result['filename'] = `${this.weighbridge}_${currDate.valueOf()}.jpg`;
+        
+        console.log("Attempting to capture image with config:", result);
+        
         this.ipcService.invokeIPC("captureImage", result).then(camResult=>{
-          if(camResult['success']===false){
-            this.notifier.notify("error", "Failed to capture image");
-          }else{
+          console.log("Camera capture result:", camResult);
+          
+          if(camResult && camResult['success'] !== false && camResult['path']){
+            // Verify the image path exists and is accessible
+            console.log("Image captured successfully at:", camResult['path']);
+            
             if (this.weighment.rstNo === undefined) {
               this.weighmentDetail.firstWeightImage = camResult['path'];
+              console.log("Set firstWeightImage:", this.weighmentDetail.firstWeightImage);
             }
             else if (this.weighment.rstNo && typeof(this.weighmentDetail.firstWeight)==="number") {
               this.weighmentDetail.secondWeightImage = camResult['path'];
+              console.log("Set secondWeightImage:", this.weighmentDetail.secondWeightImage);
             }
+            
+            // Notify user of successful capture
+            this.notifier.notify("success", "Image captured successfully");
+          } else {
+            console.error("Failed to capture image:", camResult);
+            this.notifier.notify("error", "Failed to capture image");
           }
+        }).catch(error => {
+          console.error("Error during image capture:", error);
+          this.notifier.notify("error", "Error during image capture");
         });
+      } else {
+        console.log("Camera not enabled or configuration missing");
+        this.notifier.notify("warning", "Camera is not enabled");
       }
+    }).catch(error => {
+      console.error("Error loading camera environment variables:", error);
     });
   }
 
@@ -358,7 +399,7 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
     var stmt = QueryList.INSERT_FIRST_WEIGHMENT_DETAIL
       .replace("{weighmentRstNo}", this.weighment.rstNo.toString())
       .replace("{supplier}", this.dbService.escapeString(this.weighmentDetail.supplier)?this.dbService.escapeString(this.weighmentDetail.supplier):"")
-      .replace("{customer}", this.dbService.escapeString(this.weighmentDetail.customer)?this.dbService.escapeString(this.weighmentDetail.customer): "")
+      .replace("{customer}", this.weighmentDetail.customer?this.weighmentDetail.customer:"")
       .replace("{material}", null)
       .replace("{firstWeighBridge}", this.dbService.escapeString(weighBridge))
       .replace("{firstWeight}", firstWeight.toString())
@@ -379,6 +420,7 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
   }
 
   async updateWeighment(status) {
+    console.log("updateWeighment called with status:", status);
     var stmt = QueryList.UPDATE_WEIGHMENT
       .replace("{scrollNo}", this.weighment.scrollNo ? this.weighment.scrollNo : "")
       .replace("{reqId}", this.weighment.reqId ? this.weighment.reqId.toString() : null)
@@ -392,9 +434,14 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
       .replace("{misc}", this.dbService.escapeString(this.weighment.misc)?this.dbService.escapeString(this.weighment.misc):"")
       .replace("{scrollDate}", this.weighment.scrollDate ? this.weighment.scrollDate : '')
       .replace("{reqIdDate}", this.weighment.reqIdDate ? this.weighment.reqIdDate : '');
+    
+    console.log("Update weighment SQL:", stmt);
     var result = await this.dbService.executeSyncDBStmt("UPDATE", stmt);
+    console.log("Update weighment result:", result);
     if (result > 0) {
       this.notifier.notify("success", "Weighment updated successfully");
+    } else {
+      console.error("Failed to update weighment");
     }
   }
 
@@ -438,6 +485,10 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
   }
 
   async insertCompleteWeighmentDetail() {
+    console.log("Inserting complete weighment detail with images:");
+    console.log("First weight image:", this.weighmentDetail.firstWeightImage);
+    console.log("Second weight image:", this.weighmentDetail.secondWeightImage);
+    
     var stmt = QueryList.INSERT_COMPLETE_WEIGHMENT_DETAIL
       .replace("{weighmentRstNo}", this.weighment.rstNo.toString())
       .replace("{material}", this.dbService.escapeString(this.weighmentDetail.material)?this.dbService.escapeString(this.weighmentDetail.material):"")
@@ -451,8 +502,8 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
       .replace("{secondUnit}", this.weighmentDetail.firstUnit)
       .replace("{customer}", this.weighmentDetail.customer?this.weighmentDetail.customer:"")
       .replace("{secondWeightUser}", this.authService.getTokenOrOtherStoredData("id"))
-      .replace("{firstWeightImage}", this.weighmentDetail.firstWeightImage?this.weighmentDetail.firstWeightImage:"")
-      .replace("{secondWeightImage}", this.weighmentDetail.secondWeightImage?this.weighmentDetail.secondWeightImage:"")
+      .replace("{firstWeightImage}", this.weighmentDetail.firstWeightImage ? this.dbService.escapeString(this.weighmentDetail.firstWeightImage) : "")
+      .replace("{secondWeightImage}", this.weighmentDetail.secondWeightImage ? this.dbService.escapeString(this.weighmentDetail.secondWeightImage) : "")
       .replace("{remark}", this.dbService.escapeString(this.weighmentDetail.remark));
     console.log(stmt);
     var result = await this.dbService.executeInsertAutoId("weighment_details", "id", stmt);
@@ -509,19 +560,22 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
   }
 
   async insertFirstWeighment() {
+    console.log("Inserting first weighment with image:", this.weighmentDetail.firstWeightImage);
+    
     var stmt = QueryList.INSERT_FIRST_WEIGHMENT_DETAIL
       .replace("{weighmentRstNo}", this.weighment.rstNo.toString())
       .replace("{material}", this.dbService.escapeString(this.weighmentDetail.material)?this.dbService.escapeString(this.weighmentDetail.material): "")
       .replace("{supplier}", this.dbService.escapeString(this.weighmentDetail.supplier)?this.dbService.escapeString(this.weighmentDetail.supplier):"")
-      .replace("{customer}", this.dbService.escapeString(this.weighmentDetail.customer)?this.dbService.escapeString(this.weighmentDetail.customer): "")
+      .replace("{customer}", this.weighmentDetail.customer?this.weighmentDetail.customer:"")
       .replace("{firstWeighBridge}", this.weighbridge)
       .replace("{firstWeight}", this.weighmentDetail.firstWeight.toString())
       .replace("{firstUnit}", this.weighmentDetail.firstUnit)
       .replace("{firstWeightUser}", this.authService.getTokenOrOtherStoredData("id"))
-      .replace("{firstWeightImage}", this.weighmentDetail.firstWeightImage?this.weighmentDetail.firstWeightImage:"")
-      .replace("{secondWeightImage}", this.weighmentDetail.secondWeightImage?this.weighmentDetail.secondWeightImage:"")
+      .replace("{firstWeightImage}", this.weighmentDetail.firstWeightImage ? this.dbService.escapeString(this.weighmentDetail.firstWeightImage) : "")
+      .replace("{secondWeightImage}", this.weighmentDetail.secondWeightImage ? this.dbService.escapeString(this.weighmentDetail.secondWeightImage) : "")
       .replace("{remark}", this.dbService.escapeString(this.weighmentDetail.remark));
 
+    console.log("Insert first weighment SQL:", stmt);
     var result = await this.dbService.executeInsertAutoId("weighment_details", "id", stmt);
     if (result['newId']) {
       this.weighment.weighmentDetails = await this.getWeighmentDetails(this.weighment.rstNo);
@@ -534,22 +588,25 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
   }
 
   async updateSecondWeighment() {
+    console.log("Updating second weighment with image:", this.weighmentDetail.secondWeightImage);
+    
     var stmt = QueryList.UPDATE_SECOND_WEIGHMENT_DETAIL
       .replace("{material}", this.weighmentDetail.material ? this.weighmentDetail.material: null)
       .replace("{supplier}", this.weighmentDetail.supplier)
-      .replace("{customer}", this.dbService.escapeString(this.weighmentDetail.customer)?this.dbService.escapeString(this.weighmentDetail.customer):"")
+      .replace("{customer}", this.weighmentDetail.customer?this.weighmentDetail.customer:"")
       .replace("{secondWeighBridge}", this.weighbridge)  
       .replace("{secondWeight}", this.weighmentDetail.secondWeight.toString())
       .replace("{secondUnit}", this.weighmentDetail.secondUnit ? this.weighmentDetail.secondUnit: "Kg")
       .replace("{secondWeightUser}", this.authService.getTokenOrOtherStoredData("id"))
-      .replace("{firstWeightImage}", this.weighmentDetail.firstWeightImage?this.weighmentDetail.firstWeightImage:"")
-      .replace("{secondWeightImage}", this.weighmentDetail.secondWeightImage?this.weighmentDetail.secondWeightImage:"")
+      .replace("{firstWeightImage}", this.weighmentDetail.firstWeightImage ? this.dbService.escapeString(this.weighmentDetail.firstWeightImage) : "")
+      .replace("{secondWeightImage}", this.weighmentDetail.secondWeightImage ? this.dbService.escapeString(this.weighmentDetail.secondWeightImage) : "")
       .replace("{netWeight}",
         this.weighmentDetail.netWeight ? this.weighmentDetail.netWeight?.toString() :
           Math.abs(this.weighmentDetail.firstWeight - this.weighmentDetail.secondWeight).toString())
       .replace("{remark}", this.dbService.escapeString(this.weighmentDetail.remark))
       .replace("{id}", this.weighment.weighmentDetails[this.weighment.weighmentDetails.length-1].id.toString());
-      console.log(stmt);
+    
+    console.log("Update second weighment SQL:", stmt);
     var result = await this.dbService.executeSyncDBStmt("UPDATE", stmt);
     if (result) {
       this.weighment.weighmentDetails = await this.getWeighmentDetails(this.weighment.rstNo);
@@ -712,16 +769,25 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
   }
 
   capture() {
+    // Capture image first
     this.captureImage();
-    if (this.weighment?.weighmentDetails[this.weighment?.weighmentDetails?.length - 1]?.firstWeight === undefined) {
-      this.weighmentDetail.firstWeight = this.currentWeight;
-    } else {
-      this.weighmentDetail.secondWeight = this.currentWeight;
-      if (!this.enterFirstWeightManually) {
-        this.weighmentDetail.firstWeight = this.weighment.weighmentDetails[this.weighment.weighmentDetails.length - 1].firstWeight;
-        this.weighmentDetail.netWeight = Math.abs(this.weighmentDetail.secondWeight - this.weighmentDetail.firstWeight);
+    
+    // Add a small delay to ensure image capture completes
+    setTimeout(() => {
+      // Capture weight
+      if (this.weighment?.weighmentDetails[this.weighment?.weighmentDetails?.length - 1]?.firstWeight === undefined) {
+        this.weighmentDetail.firstWeight = this.currentWeight;
+        console.log("Captured first weight:", this.weighmentDetail.firstWeight, "with image:", this.weighmentDetail.firstWeightImage);
+      } else {
+        this.weighmentDetail.secondWeight = this.currentWeight;
+        console.log("Captured second weight:", this.weighmentDetail.secondWeight, "with image:", this.weighmentDetail.secondWeightImage);
+        
+        if (!this.enterFirstWeightManually) {
+          this.weighmentDetail.firstWeight = this.weighment.weighmentDetails[this.weighment.weighmentDetails.length - 1].firstWeight;
+          this.weighmentDetail.netWeight = Math.abs(this.weighmentDetail.secondWeight - this.weighmentDetail.firstWeight);
+        }
       }
-    }
+    }, 1000); // 1 second delay to allow image capture to complete
   }
 
   getWeight() {

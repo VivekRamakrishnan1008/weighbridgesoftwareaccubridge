@@ -91,22 +91,61 @@ export class AuthenticationService {
   }
 
   async login(credentials) {
+    console.log('=== AuthenticationService.login called ===');
+    console.log('Credentials:', { username: credentials.username, password: credentials.password ? '***' : 'empty' });
+    
+    // First, let's check what users exist in the database
+    console.log('=== Checking existing users ===');
+    try {
+      var allUsers = await this.dbService.executeSyncDBStmt("SELECT", "SELECT username, id FROM app_user");
+      console.log('All users in database:', allUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+    
+    // Check if user exists with just username
+    try {
+      var userCheck = await this.dbService.executeSyncDBStmt("SELECT", 
+        `SELECT username, password, id FROM app_user WHERE username='${Utils.mysql_real_escape_string(credentials.username)}'`);
+      console.log('User check result:', userCheck);
+    } catch (error) {
+      console.error('Error checking user:', error);
+    }
+    
     var stmt = QueryList.GET_USER_BY_CREDENTIALS
       .replace("{username}", Utils.mysql_real_escape_string(credentials.username))
       .replace("{password}", Utils.mysql_real_escape_string(credentials.password));
 
-    var result = await this.dbService.executeSyncDBStmt("SELECT", stmt);
-    if (result.length > 0) {
-      var permissions = await this.dbService.executeSyncDBStmt(
-        "SELECT", QueryList.GET_USER_PERMISSIONS.replace("{userid}", result[0]['id']));
-      result[0]['permissions'] = JSON.stringify(permissions);
-      this.isLoggedIn.next(true);
-      this.storeLocalData(result[0]);
-      this.notifier.notify("success", "Login successfull");
-      return true;
-    } else {
+    console.log('Generated SQL statement:', stmt);
+    console.log('Executing database query...');
+    
+    try {
+      var result = await this.dbService.executeSyncDBStmt("SELECT", stmt);
+      console.log('Database query result:', result);
+      console.log('Result length:', result ? result.length : 'null/undefined');
+      
+      if (result && result.length > 0) {
+        console.log('User found, getting permissions...');
+        var permissions = await this.dbService.executeSyncDBStmt(
+          "SELECT", QueryList.GET_USER_PERMISSIONS.replace("{userid}", result[0]['id']));
+        console.log('User permissions:', permissions);
+        
+        result[0]['permissions'] = JSON.stringify(permissions);
+        this.isLoggedIn.next(true);
+        this.storeLocalData(result[0]);
+        this.notifier.notify("success", "Login successfull");
+        console.log('Login successful, user data stored');
+        return true;
+      } else {
+        console.log('No user found with these credentials');
+        this.isLoggedIn.next(false);
+        this.notifier.notify("error", "Login failed");
+        return false;
+      }
+    } catch (error) {
+      console.error('Database error during login:', error);
       this.isLoggedIn.next(false);
-      this.notifier.notify("error", "Login failed");
+      this.notifier.notify("error", "Login failed: Database error");
       return false;
     }
   }

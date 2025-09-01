@@ -30,14 +30,21 @@ export class LicenseService {
   }
 
   async isLicenseValid() {
+    console.log('=== License Validation Started ===');
     var payload = await this.getLicenseDetails();
+    console.log('License payload:', payload);
+    
     if (payload) {
       try {
-        return this.validateLicenseDetail(payload);
+        const result = this.validateLicenseDetail(payload);
+        console.log('License validation result:', result);
+        return result;
       } catch (ex) {
+        console.error('License validation error:', ex);
         return { success: false, msg: "License invalid" };
       }      
     }
+    console.log('No license payload found');
     return { success: false, msg: "License missing" };
   }
 

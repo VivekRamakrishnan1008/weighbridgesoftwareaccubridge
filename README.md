@@ -1,89 +1,441 @@
-Dependencies
+# Accubridge - Weighbridge Management System
 
-Node - 15.14.0
-nvm - 1.1.11
+![Version](https://img.shields.io/badge/version-1.0.3-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
+![License](https://img.shields.io/badge/license-Proprietary-red.svg)
 
-Pre-requisite
+## Overview
 
-1. Visual studio is installed. Visual Studio version used is 2019.
-2. Visual Studio C++ module is needed
-3. Python 3.9.7 is installed
+**Accubridge** is a comprehensive weighbridge management system developed by Notamedia for industrial weighing operations. The application is built as a desktop solution using **Electron** with **Angular** frontend and **Node.js** backend, designed to manage vehicle weighing processes, record transactions, and generate reports for industrial facilities.
 
-Steps for installation
+### Key Features
 
-1. Run "npm install" in root directory. In case install is stuck remove electron related dependencies and then install other dependencies. Include electron related dependencies again and install them.
-2. Run "npm install" in app directory
-3. Run "npm run rebuild" to rebuild dependencies inside app folder. This will remove error @serialport module is compiled with different NODE_MODULE_VERSION.
-4. Run "npm run rebuild" to rebuild dependencies inside root folder
+- 🚛 **Vehicle Weight Management** - Complete weighing process from entry to exit
+- 📊 **Real-time Weight Reading** - Serial port integration with weighing indicators
+- 🎯 **Multi-mode Weighing** - Support for Inbound, Outbound, Internal, and Other weighment types
+- 📝 **Comprehensive Reporting** - Detailed weighment reports and analytics
+- 🔐 **User Authentication** - Role-based access control system
+- 🖨️ **Print Integration** - Direct printer support for weighment slips
+- 💾 **Database Management** - MSSQL database with backup functionality
+- ⚙️ **System Configuration** - Flexible weighbridge and indicator setup
+- 🔄 **SAP Integration** - Direct integration with SAP systems for data synchronization
 
-//To run in development mode
-1. Run "npm run start" in one window
-2. Ensure in app/electron-main.js "env" is set DEV
-3. Run "npm run electron-start" in other window.
+## Architecture
 
-//To build project for distribution
-1. Ensure in app/electron-main.js "env" is set PROD
-2. Run "npm run distc" command.
+### Technology Stack
 
-Ensure env file is present in the location printed in console in dev mode and app_asar_log.log under resources folder in production mode.
+**Frontend:**
+- Angular 11.2.5
+- Angular Material for UI components
+- TypeScript 4.1.5
+- RxJS for reactive programming
 
-Note - While rebuilding inside app folder error can come but you must give a shot to run the application. In this build, error is present while running step 3 of Steps for installation but build has been distributed to the client and it is working.
+**Backend:**
+- Node.js with Electron 13.1.6
+- Microsoft SQL Server integration
+- Serial port communication for weighing devices
+- Strong-SOAP for SAP integration
 
+**Desktop Application:**
+- Electron for cross-platform desktop deployment
+- Native Windows printer integration
+- Hardware serial port communication
 
-Application Configuration
+### Project Structure
 
-1. Click on Initial Load Data. Enter details of database.
-2. Enter license number and click on Activate button.
-3. Click on "Load Initial Data". This will take sometime. Wait for the process to complete and then you will be given a success message on successful loading. In case it is not working then check log for database error and ensure if database is connected properly or not.
+```
+weighbridgesoftwareaccubridge/
+├── src/                          # Angular frontend source
+│   ├── app/
+│   │   ├── admin/               # Administration modules
+│   │   ├── authentication/     # User authentication
+│   │   ├── weighment/          # Core weighing functionality
+│   │   ├── weighbridge-record/ # Weight recording system
+│   │   ├── report/             # Reporting system
+│   │   └── shared/             # Shared components
+│   ├── assets/                 # Static assets
+│   └── environments/           # Environment configurations
+├── app/                        # Electron backend
+│   ├── electron-main.js        # Main Electron process
+│   ├── db-service.js          # Database operations
+│   ├── my-port-reader.js      # Serial port communication
+│   ├── printer-service.js     # Printing functionality
+│   └── sap-integration.js     # SAP connectivity
+├── build-res/                 # Build resources
+├── python-requirements/       # Python dependencies
+├── print.py                   # Python printing utility
+└── mssql_db_script_new.sql   # Database schema
+```
 
+## Core Functionality
 
-Application configuration
+### 1. Weighment Process
 
-1. Login into the application with credenatials. admin/Admin123
-2. To setup search based fields go to "Administration > Data Setup". Select "Search Fields" tab. Click on Edit icon. and then click on "Save" button. This is required once to load the field on form.
+The application manages a complete weighment workflow:
 
+**First Weight Entry:**
+- Vehicle arrives at weighbridge
+- Vehicle details are captured (Vehicle No, Driver info, etc.)
+- First weight is recorded from weighing indicator
+- Tare weight validation for preset vehicles
 
+**Second Weight Entry:**
+- Vehicle returns after loading/unloading
+- Second weight is captured
+- Net weight calculation (|Second Weight - First Weight|)
+- Material and customer details are recorded
 
+**Weighment Types Supported:**
+- **Inbound** - Materials coming into facility
+- **Outbound** - Materials leaving facility (Domestic/Export/Subcontract)
+- **Internal** - Internal facility transfers
+- **Others** - Custom weighment types
 
+### 2. Hardware Integration
 
-Please find below prerequisites and steps to setup accubridge.
+**Weighing Indicators:**
+- Serial port communication (RS232/RS485)
+- Support for various indicator protocols
+- Configurable data parsing (fixed/variable length)
+- Real-time weight reading with stability detection
 
-Prerequisites:
+**Printer Integration:**
+- Direct Windows printer support
+- Custom print formatting using Python script
+- Weighment slip generation
+- PDF export capability
 
-1. Python 3.7 or above is required if you wish to use  dot-matrix printers.. Path of python should be set in the environment variables path.
-To check this simply run "python --version" in the command prompt and as output it should show the python version installed.
+### 3. Database Management
 
-2. Microsoft SQL(MSSQL) Server database(not to be older than 2012). This server can be on the same machine or any other machine with access to the machine on which software is being installed.
-A SQL user with  SQL  authentication needs to be created for the database. Please verify that this is user is able to connect to database using  SQL  authentication.
+**MSSQL Database Structure:**
+- `weighment` - Main weighment records
+- `weighment_details` - Detailed weight measurements
+- `app_user` - User management
+- `vehicle_tare_weight` - Preset vehicle configurations
+- `app_data` - System configuration settings
 
-How to create new SQL user. Refer to following article
+### 4. User Management
 
-https://support.esri.com/en-us/knowledge-base/how-to-create-a-sql-server-authenticated-user-in-micro-000009958
+**Role-based Access Control:**
+- Admin users with full system access
+- Operator users with weighment permissions
+- Activity logging for audit trails
+- Permission-based feature access
 
-After creating user if unable to connect to database then please refer to following article.
-https://help.dugeo.com/m/Insight/l/438913-troubleshooting-enabling-tcp-ip-in-the-sql-server
+## Installation & Setup
 
-3. Following URL needs to be made accessible from the machine to activate licence
-https://license-manager.onrender.com
+### Prerequisites
 
-4. Trial licence
- 616e-9958-8141-3800-1620-1feb
+- Windows 10/11 operating system
+- Microsoft SQL Server (2016 or later)
+- Node.js 15.14.0+ and npm
+- Python 3.7+ with required packages
+- Visual Studio 2019 with C++ module
+- Serial port drivers for weighing equipment
 
-Steps for setup
+### Database Setup
 
-1. Download the software from the below link:
+1. **Create Database:**
+   ```sql
+   CREATE DATABASE weighbridge;
+   ```
 
-32-bit architecture
-https://drive.google.com/file/d/1Tc3P6_hkL7sKsKt3OXvnkigL3KXrPPx3/view?usp=sharing
+2. **Run Database Script:**
+   Execute `mssql_db_script_new.sql` to create tables and initial data
 
+3. **Configure Connection:**
+   Update database settings in environment configuration
 
-64-bit architecture
-https://drive.google.com/file/d/1Z5EJ0rpO3_GT6nFH_ef2O7JYrklWc34s/view?usp=sharing
+### Development Installation
 
+1. **Install Dependencies:**
+   ```bash
+   # Root directory
+   npm install
+   
+   # App directory
+   cd app
+   npm install
+   cd ..
+   ```
 
+2. **Rebuild Dependencies:**
+   ```bash
+   # Rebuild app dependencies
+   npm run rebuild
+   ```
 
-2. Extract the files into a folder. Navigate to folder inside. Create a shortcut of Accubridge.exe so that it is easily accessible by operators.
+3. **Install Python Requirements:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Run the Accubridge.exe
+### Production Installation
 
-3.  Click on "Initial Data" button. Enter licence number and click on Activate button. It will take sometime.
+1. **Download Application:**
+   - [32-bit version](https://drive.google.com/file/d/1Tc3P6_hkL7sKsKt3OXvnkigL3KXrPPx3/view?usp=sharing)
+   - [64-bit version](https://drive.google.com/file/d/1Z5EJ0rpO3_GT6nFH_ef2O7JYrklWc34s/view?usp=sharing)
+
+2. **Extract and Install:**
+   - Extract files to desired location
+   - Create shortcut to `Accubridge.exe`
+
+3. **Initial Configuration:**
+   - Run application
+   - Click "Initial Data" button
+   - Enter license key: `616e-9958-8141-3800-1620-1feb`
+   - Configure database connection
+
+## Configuration
+
+### Database Configuration
+
+1. **SQL Server Setup:**
+   - Ensure SQL Server is running
+   - Create SQL authenticated user
+   - Enable TCP/IP connections
+   - Configure firewall if needed
+
+2. **Connection Settings:**
+   - Server name/IP address
+   - Database name
+   - Username and password
+   - Port (default: 1433)
+
+### Application Configuration
+
+1. **Initial Setup:**
+   - Login with admin credentials: `admin/Admin123`
+   - Navigate to Administration > Data Setup
+   - Configure search fields and save
+
+2. **Weighbridge Setup:**
+   - Go to Admin → Weighbridge Setup
+   - Add weighing indicators
+   - Configure COM port settings
+   - Test connectivity
+
+3. **System Settings:**
+   - Configure weighment validation rules
+   - Set zero tolerance parameters
+   - Enable stable weight detection
+   - Configure weighment types
+
+## Usage Guide
+
+### Development Mode
+
+1. **Start Development Server:**
+   ```bash
+   npm start
+   ```
+
+2. **Configure Environment:**
+   - Set `env = "DEV"` in `app/electron-main.js`
+
+3. **Run Electron:**
+   ```bash
+   npm run electron-start
+   ```
+
+### Production Build
+
+1. **Configure Environment:**
+   - Set `env = "PROD"` in `app/electron-main.js`
+
+2. **Build Application:**
+   ```bash
+   # Complete build (32-bit + 64-bit)
+   npm run distc
+   
+   # 64-bit only
+   npm run dist
+   
+   # 32-bit only
+   npm run dist_32bit
+   ```
+
+### Daily Operations
+
+1. **Vehicle Weighment:**
+   - Select weighment type
+   - Enter vehicle number
+   - Capture first weight
+   - Complete weighment with second weight
+   - Generate slip
+
+2. **Vehicle Setup:**
+   - Register frequent vehicles
+   - Set tare weights
+   - Configure presets
+
+3. **Reporting:**
+   - Generate daily reports
+   - Export data
+   - Monitor system activity
+
+## Hardware Integration
+
+### Weighing Indicators
+
+**Supported Communication:**
+- Serial port (RS232/RS485)
+- TCP/IP networking
+- USB connections
+
+**Configuration Parameters:**
+- Baud rate (9600, 19200, etc.)
+- Data bits (7, 8)
+- Stop bits (1, 2)
+- Parity (None, Even, Odd)
+- Flow control
+
+**Weight String Parsing:**
+- Fixed length format
+- Variable length format
+- Custom delimiters
+- Character position mapping
+
+### Printer Support
+
+**Printer Types:**
+- Dot matrix printers
+- Laser/Inkjet printers
+- PDF generation
+
+**Print Features:**
+- Custom slip formatting
+- Logo and header support
+- Multiple copy printing
+- Automatic paper cutting
+
+## API Integration
+
+### SAP Integration
+
+**SOAP Web Service Integration:**
+```javascript
+// Data structure for SAP
+const RequestData = {
+  MT_WEIGHBRIDGE_WEIGHT_DATA_REQ: {
+    WEIGHBRIDGE_TAB: {
+      WEIGHBRIDGE_DATA: weighmentData
+    }
+  }
+}
+```
+
+**Configuration Requirements:**
+- SAP endpoint URL
+- Username and password
+- Service credentials
+- Data mapping configuration
+
+### Database API
+
+**Key Operations:**
+- Weighment CRUD operations
+- User management
+- Configuration management
+- Report generation
+- Backup and restore
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Failed:**
+   - Verify SQL Server service is running
+   - Check connection string parameters
+   - Ensure SQL authentication is enabled
+   - Test network connectivity
+
+2. **Serial Port Issues:**
+   - Check COM port availability
+   - Verify cable connections
+   - Match baud rate settings
+   - Test with device manager
+
+3. **Weight Reading Problems:**
+   - Validate indicator configuration
+   - Check weight string format
+   - Monitor communication logs
+   - Test stability settings
+
+4. **License Activation:**
+   - Ensure internet connectivity
+   - Check license server URL: `https://license-manager.onrender.com`
+   - Verify license key format
+   - Contact support for activation issues
+
+### Log Files
+
+**Location:**
+- Development: Console output
+- Production: `%USERPROFILE%\AppData\Roaming\Accubridge\logs\`
+
+**Log Types:**
+- Application logs
+- Database operation logs
+- Serial communication logs
+- Print operation logs
+
+## System Requirements
+
+### Minimum Requirements
+- **OS:** Windows 10 (64-bit)
+- **RAM:** 4GB
+- **Storage:** 2GB available space
+- **Processor:** Intel i3 or equivalent
+
+### Recommended Requirements
+- **OS:** Windows 11 (64-bit)
+- **RAM:** 8GB or higher
+- **Storage:** 4GB available space
+- **Processor:** Intel i5 or equivalent
+- **Network:** Ethernet for SAP integration
+
+### Software Dependencies
+- Microsoft SQL Server 2012+
+- .NET Framework 4.7.2+
+- Visual C++ Redistributable
+- Python 3.7+ (for printing)
+
+## Security Features
+
+### Data Protection
+- Encrypted database connections
+- Secure password storage
+- User session management
+- Activity audit trails
+
+### Access Control
+- Role-based permissions
+- User authentication
+- Session timeout
+- Feature-level security
+
+## Support and Maintenance
+
+### Regular Maintenance
+- Database backup scheduling
+- Log file cleanup
+- System performance monitoring
+- Security updates
+
+### Support Contacts
+- **Developer:** Deep Prakash Nishad
+- **Email:** deep.prakash.nishad@gmail.com
+- **Repository:** [GitHub](https://github.com/VivekRamakrishnan1008/weighbridgesoftwareaccubridge)
+
+## License
+
+This software is proprietary and developed by Notamedia. All rights reserved.
+
+**Trial License:** `616e-9958-8141-3800-1620-1feb`
+
+For commercial licensing, please contact the development team.
+
+---
+
+**© 2023 Notamedia. All rights reserved.**

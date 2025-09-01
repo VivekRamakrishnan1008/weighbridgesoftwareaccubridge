@@ -31,13 +31,25 @@ export class MyDbService {
   }
 
   async executeSyncDBStmt(queryType, query, loglevel = "") {
-    if (loglevel !== "") {
-      var result = await this._electronService.ipcRenderer.invoke("executeSyncStmt", [queryType, query, loglevel]);
-    } else {
-      var result = await this._electronService.ipcRenderer.invoke("executeSyncStmt", [queryType, query]);
-    }
+    console.log('=== MyDbService.executeSyncDBStmt ===');
+    console.log('Query type:', queryType);
+    console.log('Query:', query);
+    console.log('Log level:', loglevel);
     
-    return result;
+    try {
+      let result;
+      if (loglevel !== "") {
+        result = await this._electronService.ipcRenderer.invoke("executeSyncStmt", [queryType, query, loglevel]);
+      } else {
+        result = await this._electronService.ipcRenderer.invoke("executeSyncStmt", [queryType, query]);
+      }
+      
+      console.log('Database query result:', result);
+      return result;
+    } catch (error) {
+      console.error('Database query error:', error);
+      throw error;
+    }
   }
 
   async updateAppSetting(fieldArr: Array<any>) {

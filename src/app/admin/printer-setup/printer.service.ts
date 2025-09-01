@@ -244,14 +244,43 @@ export class PrinterService {
         currY = currY + field.displayName.length;
       } else if (field.type === "image-field" && field.field==="img1") {
         var latestWeighment = weighment.weighmentDetails[weighment.weighmentDetails.length-1];
-        if(latestWeighment.firstWeightImage && latestWeighment.firstWeightImage!==""){
-          var res1 = await this.ipcService.invokeIPC("loadImage", [latestWeighment.firstWeightImage]);
-          mText = `${mText}${res1}`;
+        if(latestWeighment.firstWeightImage && latestWeighment.firstWeightImage !== "" && latestWeighment.firstWeightImage !== null){
+          console.log("Loading first weight image:", latestWeighment.firstWeightImage);
+          try {
+            var res1 = await this.ipcService.invokeIPC("loadImage", [latestWeighment.firstWeightImage]);
+            if(res1 && res1 !== "") {
+              mText = `${mText}${res1}`;
+              console.log("First weight image loaded successfully");
+            } else {
+              console.log("First weight image failed to load or is empty");
+              mText = `${mText}<div style="color: red; font-style: italic;">First weight image not available</div>`;
+            }
+          } catch (error) {
+            console.error("Error loading first weight image:", error);
+            mText = `${mText}<div style="color: red; font-style: italic;">Error loading first weight image</div>`;
+          }
+        } else {
+          console.log("No first weight image path available");
         }
       } else if (field.type === "image-field" && field.field==="img2") {
-        if(latestWeighment.secondWeightImage && latestWeighment.secondWeightImage!==""){
-          var res2 = await this.ipcService.invokeIPC("loadImage", [latestWeighment.secondWeightImage]);
-          mText = `${mText}${res2}`;
+        var latestWeighment = weighment.weighmentDetails[weighment.weighmentDetails.length-1];
+        if(latestWeighment.secondWeightImage && latestWeighment.secondWeightImage !== "" && latestWeighment.secondWeightImage !== null){
+          console.log("Loading second weight image:", latestWeighment.secondWeightImage);
+          try {
+            var res2 = await this.ipcService.invokeIPC("loadImage", [latestWeighment.secondWeightImage]);
+            if(res2 && res2 !== "") {
+              mText = `${mText}${res2}`;
+              console.log("Second weight image loaded successfully");
+            } else {
+              console.log("Second weight image failed to load or is empty");
+              mText = `${mText}<div style="color: red; font-style: italic;">Second weight image not available</div>`;
+            }
+          } catch (error) {
+            console.error("Error loading second weight image:", error);
+            mText = `${mText}<div style="color: red; font-style: italic;">Error loading second weight image</div>`;
+          }
+        } else {
+          console.log("No second weight image path available");
         }
         
       }
