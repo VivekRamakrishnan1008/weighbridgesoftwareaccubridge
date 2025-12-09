@@ -49,28 +49,21 @@
             <input matInput [(ngModel)]="weighment.misc" />
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Gate Pass No</mat-label>
-            <input matInput [(ngModel)]="weighment.gatePassNo" name="cntlGatePassNo" />
+            <mat-label>Container No</mat-label>
+            <input matInput [(ngModel)]="weighment.containerNo" name="cntlContainerNo" />
           </mat-form-field>
-          <!--<button tabindex="-1" mat-icon-button color="primary" (click)="openSearchDialog()"><mat-icon>open_in_new</mat-icon></button>-->
-          <!-- Disabled fields as requested -->
-          <!--<mat-form-field appearance="outline">
-            <mat-label>Container No.</mat-label>
-            <input matInput [(ngModel)]="weighment.reqId" name="cntlRequestId" />
+          <mat-form-field appearance="outline">
+            <mat-label>License No</mat-label>
+            <input matInput [(ngModel)]="weighment.licenseNo" name="cntlLicenseNo" />
           </mat-form-field>
-          <mat-form-field fxFlex appearance="outline">
+          <mat-form-field appearance="outline">
             <mat-label>Driver Name</mat-label>
-            <input matInput [(ngModel)]="weighment.scrollNo" name="cntlscrollNo"/>
+            <input matInput [(ngModel)]="weighment.driverName" name="cntlDriverName" />
           </mat-form-field>
-          <mat-form-field fxFlex appearance="outline">
-            <mat-label>PUC No.</mat-label>
-            <input matInput [(ngModel)]="weighment.scrollDate" name="cntlscrollDate"
-                  maxlength="255" />
-          </mat-form-field>-->
-          <!-- <mat-form-field fxFlex appearance="outline" *ngIf="weighment.weighmentType.indexOf('outbound')>-1">
-            <mat-label>Request Id Date</mat-label>
-            <input matInput [(ngModel)]="weighment.reqIdDate" name="cntlReqIdDate" maxlength="8" />
-          </mat-form-field> -->
+          <mat-form-field appearance="outline">
+            <mat-label>PUC No</mat-label>
+            <input matInput [(ngModel)]="weighment.pucNo" name="cntlPucNo" />
+          </mat-form-field>
           <div fxLayout fxLayoutAlign="start center" fxLayoutGap="16px">
             <app-tag-selector *ngIf="isSeachFieldEnabled('supplier')" [tagTypeId]="1" [selectedTag]="weighmentDetail.supplier" [title]="'Supplier'" (optionSelected)="supplierSelected($event)"></app-tag-selector>
             <app-tag-selector *ngIf="isSeachFieldEnabled('customer')" #customerCntl [tagTypeId]="4" [selectedTag]="weighmentDetail.customer" [title]="'Customer'" (optionSelected)="customerSelected($event)"></app-tag-selector>

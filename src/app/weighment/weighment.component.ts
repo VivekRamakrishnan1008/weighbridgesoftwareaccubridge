@@ -433,7 +433,11 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
       .replace("{rstNo}", this.weighment.rstNo.toString())
       .replace("{misc}", this.dbService.escapeString(this.weighment.misc)?this.dbService.escapeString(this.weighment.misc):"")
       .replace("{scrollDate}", this.weighment.scrollDate ? this.weighment.scrollDate : '')
-      .replace("{reqIdDate}", this.weighment.reqIdDate ? this.weighment.reqIdDate : '');
+      .replace("{reqIdDate}", this.weighment.reqIdDate ? this.weighment.reqIdDate : '')
+      .replace("{containerNo}", this.dbService.escapeString(this.weighment.containerNo)?this.dbService.escapeString(this.weighment.containerNo):"")
+      .replace("{licenseNo}", this.dbService.escapeString(this.weighment.licenseNo)?this.dbService.escapeString(this.weighment.licenseNo):"")
+      .replace("{driverName}", this.dbService.escapeString(this.weighment.driverName)?this.dbService.escapeString(this.weighment.driverName):"")
+      .replace("{pucNo}", this.dbService.escapeString(this.weighment.pucNo)?this.dbService.escapeString(this.weighment.pucNo):"");
     
     console.log("Update weighment SQL:", stmt);
     var result = await this.dbService.executeSyncDBStmt("UPDATE", stmt);
@@ -459,6 +463,13 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
       .replace("{status}", status)
       .replace("{scrollDate}", this.weighment.scrollDate ? this.weighment.scrollDate : "")
       .replace("{reqIdDate}", this.weighment.reqIdDate ? this.weighment.reqIdDate : "");
+
+    // Include newly added fields so they are persisted and available for printing
+    stmt = stmt
+      .replace("{containerNo}", this.dbService.escapeString(this.weighment.containerNo)?this.dbService.escapeString(this.weighment.containerNo):"")
+      .replace("{licenseNo}", this.dbService.escapeString(this.weighment.licenseNo)?this.dbService.escapeString(this.weighment.licenseNo):"")
+      .replace("{driverName}", this.dbService.escapeString(this.weighment.driverName)?this.dbService.escapeString(this.weighment.driverName):"")
+      .replace("{pucNo}", this.dbService.escapeString(this.weighment.pucNo)?this.dbService.escapeString(this.weighment.pucNo):"");
 
     var result = await this.dbService.executeInsertAutoId("weighment", "rstNo", stmt);
     if (result['newId'] === undefined) {

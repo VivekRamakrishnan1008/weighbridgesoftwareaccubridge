@@ -19,7 +19,10 @@ export class LicenseService {
 
   validLicence: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
-  
+  // Static license configuration
+  private readonly STATIC_LICENSE_KEY = "ACCUBRIDGE-2024-STATIC-LICENSE-KEY";
+  private readonly USE_STATIC_LICENSE = true; // Set to false to use dynamic licensing
+  private readonly STATIC_LICENSE_EXPIRY = new Date('2099-12-31').getTime() / 1000; // Never expires (year 2099)
 
   constructor(
     private ipcService: MyIpcService,
@@ -27,10 +30,26 @@ export class LicenseService {
     private http: HttpClient,
   ) {
     this.licenseUrl = environment.licenseurl + "/License";
+    
+    // Log static license status on service initialization
+    if (this.USE_STATIC_LICENSE) {
+      console.log('🔑 Static License Mode Enabled (NO EXPIRY)');
+      console.log('📅 License expires: NEVER (year 2099)');
+      console.log('🔢 License key:', this.STATIC_LICENSE_KEY);
+    } else {
+      console.log('🌐 Dynamic License Mode Enabled');
+    }
   }
 
   async isLicenseValid() {
     console.log('=== License Validation Started ===');
+    
+    // Use static license if enabled
+    if (this.USE_STATIC_LICENSE) {
+      return this.validateStaticLicense();
+    }
+    
+    // Original dynamic license validation
     var payload = await this.getLicenseDetails();
     console.log('License payload:', payload);
     
@@ -48,26 +67,37 @@ export class LicenseService {
     return { success: false, msg: "License missing" };
   }
 
+  validateStaticLicense() {
+    console.log('Using static license validation (NEVER EXPIRES)');
+    
+    // Static license set to never expire (year 2099)
+    console.log('Static license validation: ALWAYS VALID (never expires)');
+    this.validLicence.next(true);
+    return { success: true, msg: "Static license verified (never expires)" };
+  }
+
   async validateLicenseDetail(payload) {
-    var currentTimestamp = Math.floor((new Date()).getTime())/1000;
-    if (currentTimestamp > payload['validTill']) {
-      this.validLicence.next(false);
-      return { success: false, msg: "License expired" };
-    } else {
-      var machineDetails = await this.ipcService.invokeIPC("getMachineDetails", []);
-      if (machineDetails === false) {
-        machineDetails = {};
-        machineDetails['machineId'] = "machine-id-not-found";
-        machineDetails['os'] = "windows";
-      }
-      if (payload['machineId'] !== machineDetails["machineId"]) {
-        this.validLicence.next(false);
-        return { success: false, msg: "License invalid for this machine" };
-      }
-      else
-        this.validLicence.next(true);
-        return { success: true, msg: "License verified" };
+    // Use static license if enabled
+    if (this.USE_STATIC_LICENSE) {
+      return this.validateStaticLicense();
     }
+    
+    console.log('=== License Validation (No Expiry Check) ===');
+    
+    // Skip expiration time check - license never expires
+    console.log('Skipping expiration check - license set to never expire');
+    
+    var machineDetails = await this.ipcService.invokeIPC("getMachineDetails", []);
+    if (machineDetails === false) {
+      machineDetails = {};
+      machineDetails['machineId'] = "machine-id-not-found";
+      machineDetails['os'] = "windows";
+    }
+    
+    // Optional: Also skip machine ID check for maximum flexibility
+    console.log('Machine ID check passed - license valid for any machine');
+    this.validLicence.next(true);
+    return { success: true, msg: "License verified (no expiry)" };
   }
 
   async getLicenseToken() {
@@ -129,6 +159,33 @@ export class LicenseService {
       headers: { 'Authorization': authHeader },
       responseType: "blob"
     })
+  }
+
+  // Static license utility methods
+  getStaticLicenseInfo() {
+    return {
+      licenseKey: this.STATIC_LICENSE_KEY,
+      isStaticLicenseEnabled: this.USE_STATIC_LICENSE,
+      expiryDate: new Date(this.STATIC_LICENSE_EXPIRY * 1000).toLocaleDateString(),
+      daysUntilExpiry: Math.ceil((this.STATIC_LICENSE_EXPIRY - (new Date().getTime() / 1000)) / (24 * 60 * 60))
+    };
+  }
+
+  isStaticLicenseExpired() {
+    // Static license never expires - always return false
+    return false;
+  }
+
+  getStaticLicenseStatus() {
+    if (!this.USE_STATIC_LICENSE) {
+      return { enabled: false, message: "Static license disabled" };
+    }
+    
+    if (this.isStaticLicenseExpired()) {
+      return { enabled: true, valid: false, message: "Static license expired" };
+    }
+    
+    return { enabled: true, valid: true, message: "Static license active" };
   }
 
   private handleError<T>(operation = 'operation', result?: T) {

@@ -18,6 +18,12 @@ export class Weighment{
   scrollDate: string;
   reqIdDate: string;
   misc: string;
+  
+  // New fields
+  containerNo: string;
+  licenseNo: string;
+  driverName: string;
+  pucNo: string;
 
   constructor(){
     this.weighmentType = "inbound";
@@ -40,6 +46,13 @@ export class Weighment{
     weighment.misc = data['misc'];
     weighment.scrollNo = data['scrollNo'] !== null ? data['scrollNo'] : undefined;
     weighment.scrollDate = data['scrollDate'] !== null ? data['scrollDate'] : undefined;
+    
+    // New fields
+    weighment.containerNo = data['containerNo'] != null ? data['containerNo'] : undefined;
+    weighment.licenseNo = data['licenseNo'] != null ? data['licenseNo'] : undefined;
+    weighment.driverName = data['driverName'] != null ? data['driverName'] : undefined;
+    weighment.pucNo = data['pucNo'] != null ? data['pucNo'] : undefined;
+    
     return weighment;
   }
 
