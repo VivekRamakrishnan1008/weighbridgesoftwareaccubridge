@@ -279,7 +279,7 @@ export class WeighmentReportComponent implements OnInit {
       data: {
         title: "Ticket Preview",
         'htmlContent': data['content'],
-        fontSize: 12,
+        fontSize: 14,
         printingType: this.printingType,
         'weighment': weighment,
         'weighmentDetail': weighmentDetails[weighmentDetails.length - 1]
@@ -296,7 +296,7 @@ export class WeighmentReportComponent implements OnInit {
         title: "Weighment Report",
         htmlContent: content,
         "rawTextArray": rawTextArray,
-        fontSize: 12,
+        fontSize: 14,
         printingType: this.printingType
       }
     });

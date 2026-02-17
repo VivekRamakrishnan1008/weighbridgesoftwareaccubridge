@@ -1,5 +1,20 @@
 .ticket{
-    border: 1px solid;
+    border: 1px solid #000;
+    display: inline-block;
+    width: 226mm;
+    max-height: none;
+    background: white;
+    box-sizing: border-box;
+}
+
+:host {
+    display: block;
+}
+
+::ng-deep .mat-dialog-container {
+    padding: 16px !important;
+    height: auto !important;
+    max-height: 90vh !important;
 }
 
 td {

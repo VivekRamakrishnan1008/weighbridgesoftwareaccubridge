@@ -47,11 +47,11 @@ export class Weighment{
     weighment.scrollNo = data['scrollNo'] !== null ? data['scrollNo'] : undefined;
     weighment.scrollDate = data['scrollDate'] !== null ? data['scrollDate'] : undefined;
     
-    // New fields
-    weighment.containerNo = data['containerNo'] != null ? data['containerNo'] : undefined;
-    weighment.licenseNo = data['licenseNo'] != null ? data['licenseNo'] : undefined;
-    weighment.driverName = data['driverName'] != null ? data['driverName'] : undefined;
-    weighment.pucNo = data['pucNo'] != null ? data['pucNo'] : undefined;
+    // New fields - match production database column names exactly
+    weighment.containerNo = data['containerNo'] ?? undefined;
+    weighment.licenseNo = data['licenseNO'] ?? undefined;
+    weighment.driverName = data['driverName'] ?? undefined;
+    weighment.pucNo = data['pucNo'] ?? undefined;
     
     return weighment;
   }

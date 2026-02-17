@@ -7,7 +7,7 @@ import { Weighment, WeighmentDetail } from '../../weighment/weighment';
 import { TicketField } from '../ticket-setup/ticket';
 import { TicketService } from '../ticket-setup/ticket.service';
 import { User } from '../user-management/user';
-import {Utils} from '../../utils';
+import { Utils } from '../../utils';
 
 const USER_PRINT_FIELD = "username";
 
@@ -24,7 +24,7 @@ export class PrinterService {
     private dbService: MyDbService,
     private ticketService: TicketService,
     private ipcService: MyIpcService
-  ) {}
+  ) { }
 
   private async fetchTemplateDetail(templateId) {
     if (templateId) {
@@ -95,7 +95,7 @@ export class PrinterService {
 
   includeWeighmentTableField(ticketFields) {
     for (var field of ticketFields) {
-      if (field['field'] ==="weighmentDetails") {
+      if (field['field'] === "weighmentDetails") {
         return field['isIncluded'];
       }
     }
@@ -109,39 +109,42 @@ export class PrinterService {
     if (!fields) {
       var stmt = `SELECT * FROM ticket_template WHERE applicableTo LIKE '%${weighment.weighmentType}%'`;
       var templates = await this.dbService.executeSyncDBStmt("SELECT", stmt);
-      if(templates.length===0){
+      if (templates.length === 0) {
         var stmt = `SELECT * FROM ticket_template WHERE applicableTo LIKE '%${weighment.weighmentType}%' OR applicableTo='GENERIC'`;
         templates = await this.dbService.executeSyncDBStmt("SELECT", stmt);
-      }  
-      if(templates.length<1){
+      }
+      if (templates.length < 1) {
         this.notifier.notify("error", "No matching template found")
         return;
       }
       fields = await this.fetchTemplateDetail(templates[0].id);
       fields = this.ticketService.getSortedFields(fields);
     }
-    return {template: templates[0], ticketFields: fields, content: await this.preparePreviewText(fields, weighment, weighmentDetail) };
+    var templateFontSize = templates && templates[0] && templates[0].fontSize ? templates[0].fontSize : 16;
+    return { template: templates[0], ticketFields: fields, fontSize: templateFontSize, content: await this.preparePreviewText(fields, weighment, weighmentDetail, templateFontSize) };
   }
 
-  async getPreviewText(weighment: Weighment, weighmentDetail: WeighmentDetail, fields?) {
+  async getPreviewText(weighment: Weighment, weighmentDetail: WeighmentDetail, fields?, fontSize: number = 16) {
     weighment.createdAt = weighmentDetail.firstWeightDatetime;
     // weighment.createdAt = Utils.formatDate(weighment.createdAt);
     if (!fields) {
       var stmt = `SELECT * FROM ticket_template WHERE applicableTo LIKE '%${weighment.weighmentType}%'`;
       var templates = await this.dbService.executeSyncDBStmt("SELECT", stmt);
-      if(templates.length===0){
+      if (templates.length === 0) {
         var stmt = `SELECT * FROM ticket_template WHERE applicableTo LIKE '%${weighment.weighmentType}%' OR applicableTo='GENERIC'`;
         templates = await this.dbService.executeSyncDBStmt("SELECT", stmt);
       }
-      if(templates.length<1){
+      if (templates.length < 1) {
         this.notifier.notify("error", "No matching template found")
         return;
-      }      
+      }
       fields = await this.fetchTemplateDetail(templates[0].id);
       fields = this.ticketService.getSortedFields(fields);
+      fontSize = templates[0]?.fontSize || 14;
     }
-    
-    return  await this.preparePreviewText(fields, weighment, weighmentDetail);
+
+    var content = await this.preparePreviewText(fields, weighment, weighmentDetail, fontSize);
+    return `<div style="font-size: ${fontSize}px;">${content}</div>`;
   }
 
   private trimDatetimeWeighmentDetails(weighmentDetails: Array<WeighmentDetail>) {
@@ -168,20 +171,31 @@ export class PrinterService {
   }
 
   private async preparePreviewText(fields: Array<TicketField>,
-    weighment: Weighment, origWeighmentDetail: WeighmentDetail) {
+    weighment: Weighment, origWeighmentDetail: WeighmentDetail, fontSize: number = 24) {
     var weighmentDetail = this.updateWeighmentDetail(
       origWeighmentDetail, weighment.weighmentDetails
     );
     var separator = ": ";
     var currX = 0, currY = 0;
-    var mText = "<div style='font-family: monospace, monospace;'>";
-    var minLabelLength = this.getLargestLabelLength(fields);
+var mText = `
+<div style="
+  font-family: 'Courier New', Courier, monospace;
+  font-size: inherit;
+  padding: 5px 5px 5px 20px;
+  line-height: 1.4;
+  white-space: pre;
+  letter-spacing: 0;
+  width: 80ch;
+  margin: 0 auto;
+  box-sizing: border-box;
+">
+`;    var minLabelLength = this.getLargestLabelLength(fields);
     for (var i = 0; i < fields.length; i++) {
       var field = fields[i];
       var data = "";
       if (field.type === "newline") {
         if (field.col > currY) {
-          mText = mText + "<br/>".repeat(field.col-currY);
+          mText = mText + "<br/>".repeat(field.col - currY);
         } else {
           mText = mText + " <br/> ";
         }
@@ -196,29 +210,33 @@ export class PrinterService {
         mText = mText + "&nbsp;".repeat(field.col - currY);
         currY = parseInt(field.col.toString());
       }
-      if (field.type === "ticket-field" && (weighment[field.field] || weighmentDetail[field.field.substr("weighDetails_".length)] !== undefined)) {
+      if (field.type === "ticket-field") {
         if (field.field !== "weighmentDetails") {
           data = field.displayName + "&nbsp;".repeat(minLabelLength - field.displayName?.length) + separator;
           var valLength = 0;
           if (field.field.indexOf("weighDetails") > -1) {
             if (field.field.substr("weighDetails_".length) === "firstWeightUser" || field.field.substr("weighDetails_".length) === "secondWeightUser") {
-              data = data + `${weighmentDetail[field.field.substr("weighDetails_".length)][USER_PRINT_FIELD]}`;
-              valLength = weighmentDetail[field.field.substr("weighDetails_".length)][USER_PRINT_FIELD]?.toString().length;
+              var userVal = weighmentDetail[field.field.substr("weighDetails_".length)];
+              if (userVal && userVal[USER_PRINT_FIELD]) {
+                data = data + `${userVal[USER_PRINT_FIELD]}`;
+                valLength = userVal[USER_PRINT_FIELD].toString().length;
+              }
             } else if (weighmentDetail[field.field.substr("weighDetails_".length)] != null &&
               weighmentDetail[field.field.substr("weighDetails_".length)] != undefined) {
               data = data + `${weighmentDetail[field.field.substr("weighDetails_".length)]}`;
               valLength = weighmentDetail[field.field.substr("weighDetails_".length)].toString().length;
             }
           } else {
-            data = data + `${weighment[field.field]}`;
-            valLength = weighment[field.field].toString().length;
+            var fieldVal = weighment[field.field];
+            data = data + `${fieldVal != null && fieldVal != undefined ? fieldVal : ''}`;
+            valLength = fieldVal != null && fieldVal != undefined ? fieldVal.toString().length : 0;
           }
           if (field.font === "RB") {
             mText = mText + "<b>" + data + "</b>";
           } else if (field.font === "DB") {
-            mText = mText + "<h3>" + data + "</h3>";
+            mText = mText + "<span style='font-weight:bold; font-size:1.15em;'>" + data + "</span>";
           } else if (field.font === "D") {
-            mText = mText + "<h3>" + data + "</h3>";
+            mText = mText + "<span style='font-size:1.15em;'>" + data + "</span>";
           } else {
             currY = currY + separator.length + minLabelLength + valLength;
             mText = mText + data;
@@ -236,19 +254,21 @@ export class PrinterService {
           mText = mText + this.preparePreviewWeighmentTableText(weighment.weighmentDetails, wFields, field.col);
         }
       } else if (field.type === "freetext") {
-        if (field.font === "RB" || field.font === "DB") {
+        if (field.font === "DB") {
+          mText = mText + "<span style='font-weight:bold; font-size:1.15em;'>" + field.displayName + "</span>";
+        } else if (field.font === "RB") {
           mText = mText + "<b>" + field.displayName + "</b>";
         } else {
           mText = mText + field.displayName;
         }
         currY = currY + field.displayName.length;
-      } else if (field.type === "image-field" && field.field==="img1") {
-        var latestWeighment = weighment.weighmentDetails[weighment.weighmentDetails.length-1];
-        if(latestWeighment.firstWeightImage && latestWeighment.firstWeightImage !== "" && latestWeighment.firstWeightImage !== null){
+      } else if (field.type === "image-field" && field.field === "img1") {
+        var latestWeighment = weighment.weighmentDetails[weighment.weighmentDetails.length - 1];
+        if (latestWeighment.firstWeightImage && latestWeighment.firstWeightImage !== "" && latestWeighment.firstWeightImage !== null) {
           console.log("Loading first weight image:", latestWeighment.firstWeightImage);
           try {
             var res1 = await this.ipcService.invokeIPC("loadImage", [latestWeighment.firstWeightImage]);
-            if(res1 && res1 !== "") {
+            if (res1 && res1 !== "") {
               mText = `${mText}${res1}`;
               console.log("First weight image loaded successfully");
             } else {
@@ -262,13 +282,13 @@ export class PrinterService {
         } else {
           console.log("No first weight image path available");
         }
-      } else if (field.type === "image-field" && field.field==="img2") {
-        var latestWeighment = weighment.weighmentDetails[weighment.weighmentDetails.length-1];
-        if(latestWeighment.secondWeightImage && latestWeighment.secondWeightImage !== "" && latestWeighment.secondWeightImage !== null){
+      } else if (field.type === "image-field" && field.field === "img2") {
+        var latestWeighment = weighment.weighmentDetails[weighment.weighmentDetails.length - 1];
+        if (latestWeighment.secondWeightImage && latestWeighment.secondWeightImage !== "" && latestWeighment.secondWeightImage !== null) {
           console.log("Loading second weight image:", latestWeighment.secondWeightImage);
           try {
             var res2 = await this.ipcService.invokeIPC("loadImage", [latestWeighment.secondWeightImage]);
-            if(res2 && res2 !== "") {
+            if (res2 && res2 !== "") {
               mText = `${mText}${res2}`;
               console.log("Second weight image loaded successfully");
             } else {
@@ -282,7 +302,7 @@ export class PrinterService {
         } else {
           console.log("No second weight image path available");
         }
-        
+
       }
     }
     mText = mText + "</div>";
@@ -293,16 +313,16 @@ export class PrinterService {
   getData(weighment, weighmentDetail, field) {
     var data = "";
     if (field.field.indexOf("weighDetails") > -1) {
-      data = data + `${weighmentDetail[field.field.substr("weighDetails_".length)]? weighmentDetail[field.field.substr("weighDetails_".length)]:""}`;
+      data = data + `${weighmentDetail[field.field.substr("weighDetails_".length)] ? weighmentDetail[field.field.substr("weighDetails_".length)] : ""}`;
     } else {
-      data = data + `${weighment[field.field] ? weighment[field.field]:""}`;
+      data = data + `${weighment[field.field] ? weighment[field.field] : ""}`;
     }
 
-    return data?data:"";
+    return data ? data : "";
   }
 
   async rawTextPrint(weighment: Weighment, weighmentDetail: WeighmentDetail, template?) {
-    if (!template || template.length===0) {
+    if (!template || template.length === 0) {
       var stmt = `SELECT * FROM ticket_template WHERE applicableTo LIKE '%${weighment.weighmentType}%' OR applicableTo='GENERIC'`;
       var templates = await this.dbService.executeSyncDBStmt("SELECT", stmt);
       template = await this.fetchTemplateDetail(templates[0].id);
@@ -322,7 +342,7 @@ export class PrinterService {
     for (var i = 0; i < fields.length; i++) {
       var field = fields[i];
       if (field.type === "reverseFeed") {
-        mText = mText + " rf "+(field.col);
+        mText = mText + " rf " + (field.col);
       }
 
       if (field.type === "newline") {
@@ -355,7 +375,7 @@ export class PrinterService {
               data = ` ${field.font} \"${field.displayName}${" ".repeat(minLabelSize - field.displayName?.length)}: ${weighmentDetail[field.field.substr("weighDetails_".length)] != undefined ? weighmentDetail[field.field.substr("weighDetails_".length)] : ""}\"`;
             }
           } else {
-            if (weighment[field.field]!==undefined) {
+            if (weighment[field.field] !== undefined) {
               data = ` ${field.font} \"${field.displayName}${" ".repeat(minLabelSize - field.displayName.length)}: ${weighment[field.field]}\"`;
             }
           }
@@ -385,7 +405,7 @@ export class PrinterService {
     for (var field of fields) {
       if (field.type === "ticket-field" && field.field.indexOf("weighmentDetails")) {
         maxLength = field.displayName?.length > maxLength ? field.displayName.length : maxLength;
-      }      
+      }
     }
     return maxLength;
   }
@@ -407,7 +427,7 @@ export class PrinterService {
         } else {
           minLengthMap[field.field] = data[field.field]?.toString().length > minLengthMap[field.field] ?
             data[field.field]?.toString().length : minLengthMap[field.field];
-        }        
+        }
       }
     }
 
@@ -427,12 +447,12 @@ export class PrinterService {
       //var mText = `${mText} R \"${" ".repeat(padding)}\"`;
       var wd = newWeighmentDetails[i];
       for (var field of fields) {
-        if (field.field==="sNo") {
-          var temp = i+1;
+        if (field.field === "sNo") {
+          var temp = i + 1;
         } else {
-          temp = wd[field.field]!=undefined ? wd[field.field] : "";
+          temp = wd[field.field] != undefined ? wd[field.field] : "";
         }
-        
+
         mText = `${mText} ${field.font} \"${temp}`;
         if (minLengthMap[field.field] > temp.toString().length) {
           mText = mText + " ".repeat(minLengthMap[field.field] - temp.toString().length);
@@ -480,7 +500,7 @@ export class PrinterService {
     return mText;
   }
 
-  preparePreviewWeighmentTableText(weighmentDetails: Array<WeighmentDetail>, fields: Array<TicketField>, padding: number=0) {
+  preparePreviewWeighmentTableText(weighmentDetails: Array<WeighmentDetail>, fields: Array<TicketField>, padding: number = 0) {
 
     var mText = "";
     mText = mText + this.preparePreviewWeighmentDetailsHeader(fields);
@@ -498,14 +518,15 @@ export class PrinterService {
         if (field.field === "sNo") {
           data = i + 1;
         }
+        var cellStyle = "text-align:center; padding:1px 6px; white-space:nowrap; font-size:inherit;";
         if (field.font === "RB") {
-          mText = `${mText}<td style="text-align: center"><b>${data != undefined? data : ""}</b></td>`;
+          mText = `${mText}<td style="${cellStyle}"><b>${data != undefined ? data : ""}</b></td>`;
         } else if (field.font === "DB") {
-          mText = `${mText}<td style="text-align: center"><h3>${data != undefined ? data : ""}</h3></td>`;
+          mText = `${mText}<td style="${cellStyle}"><b>${data != undefined ? data : ""}</b></td>`;
         } else if (field.font === "D") {
-          mText = `${mText}<td style="text-align: center"><h3>${data != undefined ? data : ""}</h3></td>`;
+          mText = `${mText}<td style="${cellStyle}">${data != undefined ? data : ""}</td>`;
         } else {
-          mText = `${mText}<td style="text-align: center">${data!=undefined ? data : ""}</td>`;
+          mText = `${mText}<td style="${cellStyle}">${data != undefined ? data : ""}</td>`;
         }
         currY = currY + (data != undefined ? data.toString().length : 0);
       }
@@ -514,7 +535,7 @@ export class PrinterService {
       currY = 0;
     }
 
-    return `<table style="width:100%; margin-left:${padding}ch">${mText}</table>`;
+    return `<table style="width:auto; border-collapse:collapse; font-size:inherit; margin-top: 2px;">${mText}</table>`;
   }
 
   preparePreviewWeighmentDetailsHeader(fields: Array<TicketField>) {
@@ -522,7 +543,7 @@ export class PrinterService {
 
     var currY = 0;
     for (var i = 0; i < fields.length; i++) {
-      mText = mText + `<th><b>${fields[i].displayName.toUpperCase()}</b></th>`;
+      mText = mText + `<th style="white-space:nowrap; padding:1px 6px; font-size:inherit; text-align:center;"><b>${fields[i].displayName.toUpperCase()}</b></th>`;
       //if (currY < fields[i].col) {
       //  mText = mText + "&nbsp;".repeat(fields[i].col - currY);
       //  mText = mText + `<b>${fields[i].displayName.toUpperCase()}</b>`;

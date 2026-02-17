@@ -20,7 +20,7 @@ export class TicketTemplate{
     this.labelLength = 200;
     this.copiesPerPrint = 1;
     this.font = "Arial";
-    this.fontSize = 10;
+    this.fontSize = 14;
     this.labelLength = 200;
   }
 }

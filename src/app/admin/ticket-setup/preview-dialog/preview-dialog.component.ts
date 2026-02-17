@@ -15,7 +15,7 @@ import { TicketTemplate } from '../ticket-template';
 })
 export class PreviewDialogComponent implements OnInit {
 
-  fontSize: number = 12;
+  fontSize: number = 14;
   htmlContent: string;
   ticketTemplate: TicketTemplate = new TicketTemplate();
   fields: Array<TicketField> = [];
@@ -86,7 +86,8 @@ export class PreviewDialogComponent implements OnInit {
 
   print() {
     if (this.printerType === "GRAPHICAL") {
-      let printContent = document.getElementById("ticket-content").innerHTML;
+      let ticketElement = document.getElementById("ticket-content");
+      let printContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:0;}</style></head><body>${ticketElement.outerHTML}</body></html>`;
       this.myIPCService.invokeIPC("writeToHtml", printContent).then(path => {
         this.myIPCService.invokeIPC("graphical-print-ipc",
           this.selectedPrinter,

@@ -113,6 +113,10 @@ export class WeighbridgeRecordComponent implements OnInit {
   }
 
   initializeWeightReader() {
+    if (!this.selectedIndicator) {
+      console.log("initializeWeightReader - selectedIndicator is undefined, skipping initialization");
+      return;
+    }
     if (this.selectedIndicator['stringType']==="continuous") {
       setInterval(this.updateCurrentWeight.bind(this), 1000);
     }
@@ -121,7 +125,7 @@ export class WeighbridgeRecordComponent implements OnInit {
     this.sharedDataService.currentData.pipe().subscribe(currData => {
       if (currData['currWeight']) {
         this.currData = currData['currWeight'];
-        if (this.selectedIndicator['stringType'] === "polling") {
+        if (this.selectedIndicator && this.selectedIndicator['stringType'] === "polling") {
           this.updateCurrentWeight();
         }
       }
@@ -173,7 +177,7 @@ export class WeighbridgeRecordComponent implements OnInit {
         this.prevWeight = this.currentWeight;
         this.isWeightStable = false;
       }
-    } else if ( this.selectedIndicator['stringType'] !== 'polling') {
+    } else if (this.selectedIndicator && this.selectedIndicator['stringType'] !== 'polling') {
       this.currentWeight = "Err!";
       this.isWeightStable = false;
     }
@@ -184,6 +188,10 @@ export class WeighbridgeRecordComponent implements OnInit {
   }
 
   startWeightReader() {
+    if (!this.selectedIndicator) {
+      console.log("startWeightReader - selectedIndicator is undefined, skipping initialization");
+      return;
+    }
     this.ipcService.invokeIPC("initialize-port",
     "",
       {

@@ -25,6 +25,9 @@ const ticketPredefinedFields = [
   { displayName: "Wt2 Operator", field: "weighDetails_secondWeightUser" },
   { displayName: "Customer", field: "weighDetails_customer" },
   { displayName: "Misc", field: "misc" },
+  { displayName: "License No", field: "licenseNo" },
+  { displayName: "Driver Name", field: "driverName" },
+  { displayName: "Container No", field: "containerNo" },
 ]
 
 const predefinedImageFields = [

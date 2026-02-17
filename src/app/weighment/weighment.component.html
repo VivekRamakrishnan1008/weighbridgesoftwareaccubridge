@@ -77,17 +77,17 @@
         <div fxLayout fxLayoutAlign="start center" fxLayoutGap="16px">
           <mat-form-field appearance="outline" class="weight">
             <mat-label>First Weight</mat-label>
-            <input matInput [(ngModel)]="weighmentDetail.firstWeight" (input)="weightUpdated($event, 'firstweight')" [disabled] = "!enableWeightEditing && !enterFirstWeightManually"
+            <input matInput [(ngModel)]="weighmentDetail.firstWeight" (input)="weightUpdated($event, 'firstweight')"
                    (change)="weightUpdated($event, 'firstweight')" name="cntlFirstWt" tabindex="-1"/>
           </mat-form-field>
           <mat-form-field appearance="outline" class="weight">
             <mat-label>Second Weight</mat-label>
-            <input matInput [(ngModel)]="weighmentDetail.secondWeight" (input)="weightUpdated($event, 'secondweight')" [disabled]="!enableWeightEditing"
+            <input matInput [(ngModel)]="weighmentDetail.secondWeight" (input)="weightUpdated($event, 'secondweight')"
                    (change)="weightUpdated($event, 'secondweight')" name="cntlSecondWt" tabindex="-1" />
           </mat-form-field>
           <mat-form-field appearance="outline" class="weight">
             <mat-label>Net Weight</mat-label>
-            <input matInput [(ngModel)]="weighmentDetail.netWeight" name="cntlNetWeight" readonly tabindex="-1" />
+            <input matInput [(ngModel)]="weighmentDetail.netWeight" name="cntlNetWeight" tabindex="-1" />
           </mat-form-field>
         </div>
         <div class="full-width">

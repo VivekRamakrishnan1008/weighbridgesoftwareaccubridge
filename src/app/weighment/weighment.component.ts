@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, NgZone, OnInit, Query, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, NgZone, OnInit, Query, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NotifierService } from 'angular-notifier';
@@ -95,6 +95,7 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
     private reportService: ReportService,
     private licenseService: LicenseService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {
     this.route.queryParams.subscribe(params => {
       if (params['rstNo']) {
@@ -637,7 +638,7 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
     const dialogRef = this.dialog.open(PreviewDialogComponent, {
       data: {
         'htmlContent': data['content'],
-        fontSize: 12,
+        fontSize: 14,
         fields: data['ticketFields'],
         ticketTemplate: data['template'],
         'weighment': this.weighment,
@@ -824,15 +825,62 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
           break;
       }
     }
+    console.log("getWeighment - executing SQL:", stmt);
     var result = await this.dbService.executeSyncDBStmt("SELECT", stmt);
+    console.log("getWeighment - raw DB result:", JSON.stringify(result[0]));
     if (result[0]) {
-      this.ngZone.run(async () => {
-        this.weighment = Weighment.fromJSON(result[0]);
+      // Parse weighment data outside ngZone first
+      const parsedWeighment = Weighment.fromJSON(result[0]);
+      const weighmentDetails = WeighmentDetail.fromJSONList(await this.getWeighmentDetails(parsedWeighment.rstNo));
+      
+      console.log("getWeighment - parsedWeighment.licenseNo BEFORE ngZone:", parsedWeighment.licenseNo);
+      console.log("getWeighment - parsedWeighment.containerNo BEFORE ngZone:", parsedWeighment.containerNo);
+      console.log("getWeighment - parsedWeighment.driverName BEFORE ngZone:", parsedWeighment.driverName);
+      
+      // Use ngZone to update the view and force change detection
+      this.ngZone.run(() => {
+        // Assign all properties explicitly to ensure bindings update
+        this.weighment.rstNo = parsedWeighment.rstNo;
+        this.weighment.vehicleNo = parsedWeighment.vehicleNo;
+        this.weighment.reqId = parsedWeighment.reqId;
+        this.weighment.weighmentType = parsedWeighment.weighmentType;
+        this.weighment.gatePassNo = parsedWeighment.gatePassNo;
+        this.weighment.poDetails = parsedWeighment.poDetails;
+        this.weighment.scrollNo = parsedWeighment.scrollNo;
+        this.weighment.transporterCode = parsedWeighment.transporterCode;
+        this.weighment.transporterName = parsedWeighment.transporterName;
+        this.weighment.status = parsedWeighment.status;
+        this.weighment.createdAt = parsedWeighment.createdAt;
+        this.weighment.scrollDate = parsedWeighment.scrollDate;
+        this.weighment.reqIdDate = parsedWeighment.reqIdDate;
+        this.weighment.misc = parsedWeighment.misc;
+        
+        // Explicitly assign the new fields
+        this.weighment.containerNo = parsedWeighment.containerNo;
+        this.weighment.licenseNo = parsedWeighment.licenseNo;
+        this.weighment.driverName = parsedWeighment.driverName;
+        this.weighment.pucNo = parsedWeighment.pucNo;
+        
+        this.weighment.weighmentDetails = weighmentDetails;
+        
+        console.log("getWeighment - AFTER assignment - this.weighment.licenseNo:", this.weighment.licenseNo);
+        console.log("getWeighment - AFTER assignment - this.weighment.containerNo:", this.weighment.containerNo);
+        console.log("getWeighment - AFTER assignment - this.weighment.driverName:", this.weighment.driverName);
+        
         this.transporter = `${this.weighment.transporterCode}-${this.weighment.transporterName}`;
-        this.weighment.weighmentDetails = WeighmentDetail.fromJSONList(await this.getWeighmentDetails(this.weighment.rstNo));
+        
         if (this.weighment.weighmentDetails.length > 0) {
-          this.weighmentDetail = Object.assign(this.weighment.weighmentDetails[this.weighment.weighmentDetails.length - 1]);
+          this.weighmentDetail = Object.assign({}, this.weighment.weighmentDetails[this.weighment.weighmentDetails.length - 1]);
         }
+        
+        // Force change detection to update the view
+        this.cdr.detectChanges();
+        
+        // Additional safety: schedule another change detection after a tick
+        setTimeout(() => {
+          console.log("getWeighment - setTimeout - this.weighment.licenseNo:", this.weighment.licenseNo);
+          this.cdr.detectChanges();
+        }, 0);
       });
       this.isPresetVehicle = false;
     } else if (keys[0] === "vehicleNo") {
