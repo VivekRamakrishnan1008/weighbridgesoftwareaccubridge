@@ -5,10 +5,10 @@ const path = require('path');
 const machine = require("node-machine-id");
 
 global.log = require('electron-log');
-global.logLevel = "error";
+global.logLevel = "info";
 log.transports.file.file = __dirname + 'master_log.log';
-log.transports.console.level = "error";
-log.transports.file.level = 'error';
+log.transports.console.level = "info";
+log.transports.file.level = 'info';
 
 require("./db-service.js");
 
@@ -83,16 +83,19 @@ ipcMain.handle("getMachineDetails", async (event, arg) => {
   try {
     var machineId = await machine.machineId(true);
     var platform = os.platform();
+    var hostname = os.hostname();
     return {
       "os": platform,
-      "machineId": machineId
+      "machineId": machineId,
+      "machineName": hostname
     };
   }
   catch (e) {
     log.error(e);
     return {
       "os": "windows",
-      "machineId": "machine-id-not-found"
+      "machineId": "machine-id-not-found",
+      "machineName": "unknown"
     };
   }
 });

@@ -3,12 +3,12 @@ export class QueryList{
   //Weighment
   static readonly INSERT_WEIGHMENT: string = "INSERT INTO weighment(rstNo, vehicleNo, scrollNo, \
   reqId, gatePassNo, weighmentType, poDetails, transporterCode, transporterName, status, \
-  createdAt, scrollDate, reqIdDate, misc, containerNo, licenseNo, driverName, pucNo, extras) \
+  createdAt, scrollDate, reqIdDate, misc, containerNo, licenseNo, driverName, pucNo, invoiceNo, lrNo, extras) \
   VALUES({rstNo}, '{vehicleNo}', '{scrollNo}', '{reqId}', '{gatePassNo}', '{weighmentType}', \
-  '{poDetails}', '{transporterCode}', '{transporterName}', '{status}', GETDATE(), '{scrollDate}', '{reqIdDate}', '{misc}', '{containerNo}', '{licenseNo}', '{driverName}', '{pucNo}', '{serialNo}|{location}');";
+  '{poDetails}', '{transporterCode}', '{transporterName}', '{status}', GETDATE(), '{scrollDate}', '{reqIdDate}', '{misc}', '{containerNo}', '{licenseNo}', '{driverName}', '{pucNo}', '{invoiceNo}', '{lrNo}', '{serialNo}|{location}');";;
     static readonly UPDATE_WEIGHMENT: string = "UPDATE weighment SET scrollNo='{scrollNo}', reqId='{reqId}', \
       gatePassNo='{gatePassNo}', weighmentType='{weighmentType}', transporterCode='{transporterCode}', vehicleNo='{vehicleNo}', \
-      transporterName='{transporterName}', status='{status}', scrollDate='{scrollDate}', reqIdDate='{reqIdDate}', misc='{misc}', containerNo='{containerNo}', licenseNo='{licenseNo}', driverName='{driverName}', pucNo='{pucNo}' WHERE rstNo={rstNo}";
+      transporterName='{transporterName}', status='{status}', scrollDate='{scrollDate}', reqIdDate='{reqIdDate}', misc='{misc}', containerNo='{containerNo}', licenseNo='{licenseNo}', driverName='{driverName}', pucNo='{pucNo}', invoiceNo='{invoiceNo}', lrNo='{lrNo}' WHERE rstNo={rstNo}";
   static readonly DELETE_WEIGHMENT = "DELETE weighment WHERE rstNo='{rstNo}'";
   static readonly UPDATE_WEIGHMENT_STATUS: string = "UPDATE weighment SET status='{status}' WHERE rstNo={rstNo}";
   //Weighment Details

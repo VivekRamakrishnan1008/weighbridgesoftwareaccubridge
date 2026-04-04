@@ -191,7 +191,7 @@ module.exports = Object.freeze({
         id: 14, templateId: 1, field: "weighDetails_id", type: "ticket-field", displayName: 'Weighslip No', row: null, col: null, isIncluded: 1, font: "R"
       },
       {
-        id: 15, templateId: 1, field: "weighDetails_material", type: "ticket-field", displayName: 'Material', row: null, col: null, isIncluded: 1, font: "R"
+        id: 15, templateId: 1, field: "weighDetails_material", type: "ticket-field", displayName: 'Material', row: 6, col: 40, isIncluded: 1, font: "R"
       },
       {
         id: 16, templateId: 1, field: "weighDetails_supplier", type: "ticket-field", displayName: 'Supplier', row: 5, col: 40, isIncluded: 1, font: "R"
@@ -212,10 +212,10 @@ module.exports = Object.freeze({
         id: 21, templateId: 1, field: "weighDetails_netWeight", type: "ticket-field", displayName: 'Net Wt(KG)', row: 10, col: 1, isIncluded: 1, font: "R"
       },
       {
-        id: 22, templateId: 1, field: null, type: "freetext", displayName: 'BHARAT FORGE LIMITED', row: 1, col: 30, isIncluded: 1, font:	"DB"
+        id: 22, templateId: 1, field: null, type: "freetext", displayName: 'CG POWER & INDUSTRIAL SOLUTION LTD,M6,STAMPING DIVISION,', row: 1, col: 15, isIncluded: 1, font:	"DB"
       },
       {
-        id: 23, templateId: 1, field: null, type: "freetext", displayName: 'MUNDHWA, PUNE 411036', row: 2, col: 30, isIncluded: 1, font: "DB"
+        id: 23, templateId: 1, field: null, type: "freetext", displayName: 'B-110,B-111/B,B112/2,NAGAPUR MIDC,AHILYANAGAR-414111', row: 2, col: 15, isIncluded: 1, font: "DB"
       },
       {
         id: 24, templateId: 1, field: null, type: "freetext", displayName: '---------------------------------------------------------------------------------', row: 3, col: 1, isIncluded: 1, font: "R"
@@ -264,6 +264,12 @@ module.exports = Object.freeze({
       },
       {
         id: 39, templateId: 1, field: "img4", type: "image-field", displayName: 'Image 4', row: null, col: null, isIncluded: 0, font: "R"
+      },
+      {
+        id: 40, templateId: 1, field: "invoiceNo", type: "ticket-field", displayName: 'Invoice No', row: 4, col: 40, isIncluded: 1, font: "R"
+      },
+      {
+        id: 41, templateId: 1, field: "lrNo", type: "ticket-field", displayName: 'LR No', row: 7, col: 40, isIncluded: 1, font: "R"
       }
 
     ],
@@ -451,21 +457,21 @@ module.exports = Object.freeze({
         inOutMode: "GENERIC",
         entryMode: "LIST_SOFT",
         enable: 1,
-        fieldName: "supplier"
+        fieldName: "material"
       }, {
         id: 3,
         displayName: "Transporter",
         inOutMode: "GENERIC",
         entryMode: "LIST_SOFT",
         enable: 1,
-        fieldName: "supplier"
+        fieldName: "transporter"
       }, {
         id: 4,
         displayName: "Customer",
         inOutMode: "GENERIC",
         entryMode: "LIST_SOFT",
         enable: 1,
-        fieldName: "supplier"
+        fieldName: "customer"
       }],
     search_field_value: [
       //List of suppliers
@@ -696,7 +702,7 @@ module.exports = Object.freeze({
     template_detail: "INSERT INTO template_detail(id, templateId, field, type, displayName, row, col, isIncluded, font) VALUES({id}, {templateId}, '{field}', '{type}', '{displayName}', {row}, {col}, {isIncluded}, '{font}')",
     weighindicator: "INSERT INTO weighindicator(id, weighstring, port, status, measuringUnit, decimalPoint, type, httpType, comPort, wiName, ipAddress) VALUES({id}, '{weighstring}', {port}, '{status}', '{measuringUnit}', {decimalPoint}, '{type}', '{httpType}', '{comPort}', '{wiName}', '{ipAddress}')",
     weighstring: "INSERT INTO weighstring (stringName, totalChars, variableLength, type, pollingCommand, baudRate, dataBits, stopBits, parity, flowControl, weightCharPosition1, weightCharPosition2, weightCharPosition3, weightCharPosition4, weightCharPosition5, weightCharPosition6, startChar1, startChar2, startChar3, startChar4, endChar1, endChar2, endChar3, signCharPosition, negativeSignValue) VALUES ('{stringName}', {totalChars}, {variableLength}, '{type}', '{pollingCommand}', '{baudRate}', {dataBits}, {stopBits}, '{parity}', '{flowControl}', {weightCharPosition1}, {weightCharPosition2}, {weightCharPosition3}, {weightCharPosition4}, {weightCharPosition5}, {weightCharPosition6}, '{startChar1}', '{startChar2}', '{startChar3}', '{startChar4}', '{endChar1}', '{endChar2}', '{endChar3}', {signCharPosition}, '{negativeSignValue}')",
-    search_field: "INSERT INTO search_field(id, displayName, entryMode, inOutMode) VALUES({id}, '{displayName}', '{entryMode}', '{inOutMode}')",
+    search_field: "INSERT INTO search_field(id, displayName, entryMode, inOutMode, fieldName) VALUES({id}, '{displayName}', '{entryMode}', '{inOutMode}', '{fieldName}')",
     search_field_value: "INSERT INTO search_field_value(id, search_field_id, mValue, code) VALUES({id}, {search_field_id}, '{mValue}', '{code}')",
     help: "INSERT INTO help(id, content) VALUES('{id}', '{content}')"
   },

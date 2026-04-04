@@ -71,11 +71,11 @@ export class InitialSetupComponent implements OnInit {
   getLicenseDetails() {
     this.licenseService.getLicenseDetails().then(async (result) => {
       if (result && result !== null) {
-        this.licenseNumber = this.formatLicenseNumber(result['license']);
-        console.log(result);
-        var expDate = new Date(result['validTill'] * 1000);
-
-        this.validTill = `${expDate.getDate()}/${expDate.getMonth() + 1}/${expDate.getFullYear()}`;
+        this.licenseNumber = result['license_key'] || '';
+        if (result['expiry_date']) {
+          var expDate = new Date(result['expiry_date']);
+          this.validTill = `${expDate.getDate()}/${expDate.getMonth() + 1}/${expDate.getFullYear()}`;
+        }
         var licenseStatus = await this.licenseService.validateLicenseDetail(result);
         this.isLicenseActive = licenseStatus['success'];
         if (!this.isLicenseActive) {
@@ -158,28 +158,38 @@ export class InitialSetupComponent implements OnInit {
   async activateLicense() {
     var machineDetails = await this.ipcService.invokeIPC("getMachineDetails", []);
     if (machineDetails === false) {
-      machineDetails = {};
-      machineDetails['machineId'] = "machine-id-not-found";
-      machineDetails['os'] = "windows";
+      machineDetails = { machineId: "machine-id-not-found", machineName: "unknown", os: "windows" };
     }
-    machineDetails['license'] = this.licenseNumber?.replace(/-/g, '');
-    if (machineDetails['license']?.length !== 24) {
-      this.notifier.notify("error", "Invalid license number");
+
+    const licenseKey = this.licenseNumber?.trim();
+    const keyWithoutDashes = licenseKey?.replace(/-/g, '');
+    if (!keyWithoutDashes || keyWithoutDashes.length !== 24) {
+      this.notifier.notify("error", "Invalid license key. Expected format: xxxx-xxxx-xxxx-xxxx-xxxx-xxxx");
       return;
     }
-    this.licenseService.activateLicense(machineDetails).subscribe(result => {
-      if (result["success"]) {
-        this.isLicenseActive = true;
 
-        this.ipcService.invokeIPC("saveLicense", [machineDetails['machineId'], result["token"]]).then(result => {
+    const payload = {
+      license_key: licenseKey,
+      machine_id: machineDetails['machineId'],
+      machine_name: machineDetails['machineName'],
+      os: machineDetails['os']
+    };
+
+    this.licenseService.activateLicense(payload).subscribe(result => {
+      if (result && result["success"]) {
+        const licenseData = JSON.stringify({
+          license_key: licenseKey,
+          expiry_date: result['expiry_date'] || result['data']?.expiry_date || null,
+          status: result['status'] || result['data']?.status || 'active',
+          machine_id: machineDetails['machineId']
+        });
+        this.ipcService.invokeIPC("saveLicense", [machineDetails['machineId'], licenseData]).then(() => {
           this.notifier.notify("success", "License successfully activated");
+          this.isLicenseActive = true;
           this.getLicenseDetails();
         });
-        //this.ipcService.invokeIPC("saveSingleEnvVar", ["token", result["token"]]).then(result => {
-        //  this.notifier.notify("success", "License successfully activated");
-        //});
       } else {
-        this.notifier.notify("error", "Failed to activate license");
+        this.notifier.notify("error", result?.['message'] || "Failed to activate license");
       }
     });
   }
@@ -187,28 +197,32 @@ export class InitialSetupComponent implements OnInit {
   async deactivateLicenseForMachine() {
     var machineDetails = await this.ipcService.invokeIPC("getMachineDetails", []);
     if (machineDetails === false) {
-      machineDetails = {};
-      machineDetails['machineId'] = "machine-id-not-found";
-      machineDetails['os'] = "windows";
+      machineDetails = { machineId: "machine-id-not-found", machineName: "unknown", os: "windows" };
     }
-    machineDetails['license'] = this.licenseNumber?.replace(/-/g, '');
-    if (machineDetails['license']?.length !== 24) {
-      this.notifier.notify("error", "Invalid license number");
-      return;
-    }
-    var token = await this.licenseService.getLicenseToken();
-    this.licenseService.deactivateLicenseForMachine(machineDetails, token).subscribe(result => {
-      if (result["success"]) {
-        this.isLicenseActive = false;
-        this.licenseNumber = "";
-        this.ipcService.invokeIPC("removeLicense", [machineDetails['machineId']]).then(result => {
-          if (result) {
-            this.notifier.notify("success", "License successfully de-activated");
-          }
+
+    const payload = {
+      license_key: this.licenseNumber?.trim(),
+      machine_id: machineDetails['machineId']
+    };
+
+    this.licenseService.deactivateLicenseForMachine(payload).subscribe(
+      result => {
+        this.ipcService.invokeIPC("removeLicense", [machineDetails['machineId']]).then(() => {
+          this.isLicenseActive = false;
+          this.licenseNumber = "";
+          this.validTill = "";
+          this.notifier.notify("success", "License successfully de-activated");
         });
-      } else {
-        this.notifier.notify("error", "Failed to remove license from this machine");
+      },
+      () => {
+        // Even if server call fails, remove locally so user can re-activate
+        this.ipcService.invokeIPC("removeLicense", [machineDetails['machineId']]).then(() => {
+          this.isLicenseActive = false;
+          this.licenseNumber = "";
+          this.validTill = "";
+          this.notifier.notify("success", "License removed from this machine");
+        });
       }
-    });
+    );
   }
 }

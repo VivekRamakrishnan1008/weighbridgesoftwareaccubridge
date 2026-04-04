@@ -200,6 +200,7 @@ export class AuthenticationService {
         localStorage.clear();
         sessionStorage.clear();
         this.isLoggedIn.next(false);
+        return of(result as T);
       }else if(error instanceof HttpErrorResponse && error.status === 500){
         this.notifier.notify("error", error.error.msg);
         this.notifier.notify("error", "Server error. Please contact developer");

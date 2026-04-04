@@ -5,7 +5,7 @@
 export const environment = {
   production: false,
   //licenseurl: "http://localhost:1337",
-  licenseurl: "https://license-manager.onrender.com",
+  licenseurl: "https://license.agentfloww.com",
   appName: "accubridge",
   appDisplayName: "Accubridge",
   firstAutoRefresh: true,

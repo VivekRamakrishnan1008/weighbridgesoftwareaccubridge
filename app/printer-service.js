@@ -26,7 +26,7 @@ function getPrinters() {
   } catch (err) {
     log.error(err);
   }
-  
+
 }
 
 ipcMain.handle("printer-ipc", async (event, ...args) => {
@@ -56,14 +56,16 @@ ipcMain.handle("graphical-print-ipc", async (e, ...args) => {
       contextIsolation: false
     }
   });
-  
+
   window.loadFile(args[1]);
   window.once('ready-to-show', () => {
-    setTimeout(()=>{
+    setTimeout(() => {
       if (args[0]['name'].indexOf("PDF") > -1) {
         try {
           window.webContents.printToPDF({
-            landscape: true,
+            landscape: false,
+            pageSize: { width: 210000, height: 148000 }, // A5 size in microns (210mm x 148mm)
+            margins: { top: 0, bottom: 0, left: 0, right: 0 }
           }).then((data) => {
             const pdfPath = path.join(os.homedir(), `Desktop/${bootstrap.mConstants.appName}/${args[2]}.pdf`)
             fs.writeFile(pdfPath, data, (error) => {
@@ -71,7 +73,7 @@ ipcMain.handle("graphical-print-ipc", async (e, ...args) => {
               shell.openExternal('file://' + pdfPath);
             }).then(() => {
               window.close();
-            });          
+            });
           });
         } catch (e) {
           log.error(e);
@@ -81,7 +83,10 @@ ipcMain.handle("graphical-print-ipc", async (e, ...args) => {
         window.webContents.print({
           silent: true,
           deviceName: args[0]['name'],
-          landscape: true
+          landscape: false,
+          pageSize: 'A5',
+          margins: { marginType: 'none' },
+          scaleFactor: 100
         }, (success, errorType) => {
           if (!success) console.log(errorType)
 
@@ -89,9 +94,9 @@ ipcMain.handle("graphical-print-ipc", async (e, ...args) => {
         });
       }
     }, 5000)
-    
+
   });
- 
+
 });
 
 ipcMain.handle("cmdline-print-ipc", async (event, ...args) => {

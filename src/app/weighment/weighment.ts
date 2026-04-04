@@ -24,6 +24,8 @@ export class Weighment{
   licenseNo: string;
   driverName: string;
   pucNo: string;
+  invoiceNo: string;
+  lrNo: string;
 
   constructor(){
     this.weighmentType = "inbound";
@@ -52,6 +54,8 @@ export class Weighment{
     weighment.licenseNo = data['licenseNO'] ?? undefined;
     weighment.driverName = data['driverName'] ?? undefined;
     weighment.pucNo = data['pucNo'] ?? undefined;
+    weighment.invoiceNo = data['invoiceNo'] ?? undefined;
+    weighment.lrNo = data['lrNo'] ?? undefined;
     
     return weighment;
   }

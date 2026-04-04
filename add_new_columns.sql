@@ -42,3 +42,20 @@ FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_NAME = 'weighment'
 AND COLUMN_NAME IN ('containerNo', 'licenseNo', 'driverName', 'pucNo')
 GO
+
+-- Fix material field position in ticket template
+-- The weighDetails_material field had row=NULL, col=NULL which caused it to be
+-- filtered out of the ticket preview and print. This sets it to row=6, col=40.
+IF EXISTS (SELECT 1 FROM template_detail WHERE field = 'weighDetails_material' AND row IS NULL AND col IS NULL)
+BEGIN
+    UPDATE template_detail
+    SET row = 6, col = 40
+    WHERE field = 'weighDetails_material' AND row IS NULL AND col IS NULL
+END
+GO
+
+-- Verify fix
+SELECT id, templateId, field, displayName, row, col, isIncluded
+FROM template_detail
+WHERE field = 'weighDetails_material'
+GO

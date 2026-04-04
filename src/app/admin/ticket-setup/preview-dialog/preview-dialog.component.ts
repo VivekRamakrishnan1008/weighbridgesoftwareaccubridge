@@ -16,7 +16,7 @@ import { TicketTemplate } from '../ticket-template';
 export class PreviewDialogComponent implements OnInit {
 
   fontSize: number = 14;
-  htmlContent: string;
+  htmlContent: string = '';
   ticketTemplate: TicketTemplate = new TicketTemplate();
   fields: Array<TicketField> = [];
   printers: Array<Printer> = [];

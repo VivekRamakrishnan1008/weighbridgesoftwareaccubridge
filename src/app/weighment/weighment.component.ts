@@ -265,17 +265,17 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
   }
 
   supplierSelected(event){
-    this.weighmentDetail.supplier = `${event.code}-${event.mValue}`;
+    this.weighmentDetail.supplier = event.mValue;
   }
 
   materialSelected(event) {
-    this.weighmentDetail.material = `${event.code}-${event.mValue}`;
+    this.weighmentDetail.material = event.mValue;
   }
 
   customerSelected(event) {
     console.log("Printing customer");
     console.log(event);
-    this.weighmentDetail.customer = `${event.code}-${event.mValue}`;
+    this.weighmentDetail.customer = event.mValue;
   }
 
   async save() {
@@ -438,7 +438,9 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
       .replace("{containerNo}", this.dbService.escapeString(this.weighment.containerNo)?this.dbService.escapeString(this.weighment.containerNo):"")
       .replace("{licenseNo}", this.dbService.escapeString(this.weighment.licenseNo)?this.dbService.escapeString(this.weighment.licenseNo):"")
       .replace("{driverName}", this.dbService.escapeString(this.weighment.driverName)?this.dbService.escapeString(this.weighment.driverName):"")
-      .replace("{pucNo}", this.dbService.escapeString(this.weighment.pucNo)?this.dbService.escapeString(this.weighment.pucNo):"");
+      .replace("{pucNo}", this.dbService.escapeString(this.weighment.pucNo)?this.dbService.escapeString(this.weighment.pucNo):"")
+      .replace("{invoiceNo}", this.dbService.escapeString(this.weighment.invoiceNo)?this.dbService.escapeString(this.weighment.invoiceNo):"")
+      .replace("{lrNo}", this.dbService.escapeString(this.weighment.lrNo)?this.dbService.escapeString(this.weighment.lrNo):"");
     
     console.log("Update weighment SQL:", stmt);
     var result = await this.dbService.executeSyncDBStmt("UPDATE", stmt);
@@ -470,7 +472,9 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
       .replace("{containerNo}", this.dbService.escapeString(this.weighment.containerNo)?this.dbService.escapeString(this.weighment.containerNo):"")
       .replace("{licenseNo}", this.dbService.escapeString(this.weighment.licenseNo)?this.dbService.escapeString(this.weighment.licenseNo):"")
       .replace("{driverName}", this.dbService.escapeString(this.weighment.driverName)?this.dbService.escapeString(this.weighment.driverName):"")
-      .replace("{pucNo}", this.dbService.escapeString(this.weighment.pucNo)?this.dbService.escapeString(this.weighment.pucNo):"");
+      .replace("{pucNo}", this.dbService.escapeString(this.weighment.pucNo)?this.dbService.escapeString(this.weighment.pucNo):"")
+      .replace("{invoiceNo}", this.dbService.escapeString(this.weighment.invoiceNo)?this.dbService.escapeString(this.weighment.invoiceNo):"")
+      .replace("{lrNo}", this.dbService.escapeString(this.weighment.lrNo)?this.dbService.escapeString(this.weighment.lrNo):"");
 
     var result = await this.dbService.executeInsertAutoId("weighment", "rstNo", stmt);
     if (result['newId'] === undefined) {
@@ -630,10 +634,20 @@ export class WeighmentComponent implements OnInit, AfterViewInit {
   }
 
   async displayWeighmentSummary() {
-    var data = await this.printerService.getPreviewDataWithTemplate(
-      this.weighment,
-      this.weighment.weighmentDetails[this.weighment.weighmentDetails.length-1]
-    );
+    try {
+      var data = await this.printerService.getPreviewDataWithTemplate(
+        this.weighment,
+        this.weighment.weighmentDetails[this.weighment.weighmentDetails.length-1]
+      );
+      if (!data || !data['content']) {
+        this.notifier.notify("error", "Failed to generate ticket preview");
+        return;
+      }
+    } catch (e) {
+      console.error("Error generating ticket preview:", e);
+      this.notifier.notify("error", "Error generating ticket preview");
+      return;
+    }
 
     const dialogRef = this.dialog.open(PreviewDialogComponent, {
       data: {

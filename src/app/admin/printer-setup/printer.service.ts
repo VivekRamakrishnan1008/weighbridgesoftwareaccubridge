@@ -33,6 +33,17 @@ export class PrinterService {
       );
 
       var fields = TicketField.fromJSON(templateDetail, true) as Array<TicketField>;
+
+      // Ensure weighDetails_material has default position if not configured
+      if (fields['ticketFields']) {
+        for (var tf of fields['ticketFields']) {
+          if (tf.field === 'weighDetails_material' && tf.isIncluded && (tf.row === null || tf.col === null)) {
+            tf.row = tf.row !== null ? tf.row : 6;
+            tf.col = tf.col !== null ? tf.col : 40;
+          }
+        }
+      }
+
       return this.getCurrentFieldData(
         fields['ticketFields'],
         fields['freetextFields'],
@@ -118,7 +129,6 @@ export class PrinterService {
         return;
       }
       fields = await this.fetchTemplateDetail(templates[0].id);
-      fields = this.ticketService.getSortedFields(fields);
     }
     var templateFontSize = templates && templates[0] && templates[0].fontSize ? templates[0].fontSize : 16;
     return { template: templates[0], ticketFields: fields, fontSize: templateFontSize, content: await this.preparePreviewText(fields, weighment, weighmentDetail, templateFontSize) };
@@ -139,7 +149,6 @@ export class PrinterService {
         return;
       }
       fields = await this.fetchTemplateDetail(templates[0].id);
-      fields = this.ticketService.getSortedFields(fields);
       fontSize = templates[0]?.fontSize || 14;
     }
 
@@ -199,7 +208,7 @@ var mText = `
         } else {
           mText = mText + " <br/> ";
         }
-        return mText;
+        continue;
       }
       if (field.row > currX) {
         mText = mText + "<br/>".repeat(field.row - currX);
@@ -225,6 +234,9 @@ var mText = `
               weighmentDetail[field.field.substr("weighDetails_".length)] != undefined) {
               data = data + `${weighmentDetail[field.field.substr("weighDetails_".length)]}`;
               valLength = weighmentDetail[field.field.substr("weighDetails_".length)].toString().length;
+            } else {
+              // Show field label even when value is null/undefined (e.g., material not entered)
+              data = data + '';
             }
           } else {
             var fieldVal = weighment[field.field];

@@ -165,6 +165,77 @@ async function initialDataSetup() {
       }      
     }
   }
+  // Run data migrations to fix any existing incorrect data
+  await runDataMigrations(pool);
+}
+
+async function runDataMigrations(pool) {
+  var migrations = [
+    "UPDATE search_field SET fieldName='supplier' WHERE id=1 AND (fieldName IS NULL OR fieldName != 'supplier')",
+    "UPDATE search_field SET fieldName='material' WHERE id=2 AND (fieldName IS NULL OR fieldName != 'material')",
+    "UPDATE search_field SET fieldName='transporter' WHERE id=3 AND (fieldName IS NULL OR fieldName != 'transporter')",
+    "UPDATE search_field SET fieldName='customer' WHERE id=4 AND (fieldName IS NULL OR fieldName != 'customer')"
+  ];
+  // Add missing columns to weighment table
+  var columnMigrations = [
+    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[weighment]') AND name = 'containerNo') ALTER TABLE [dbo].[weighment] ADD [containerNo] [varchar](100) NULL",
+    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[weighment]') AND name = 'licenseNo') ALTER TABLE [dbo].[weighment] ADD [licenseNo] [varchar](100) NULL",
+    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[weighment]') AND name = 'driverName') ALTER TABLE [dbo].[weighment] ADD [driverName] [varchar](150) NULL",
+    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[weighment]') AND name = 'pucNo') ALTER TABLE [dbo].[weighment] ADD [pucNo] [varchar](100) NULL",
+    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[weighment]') AND name = 'invoiceNo') ALTER TABLE [dbo].[weighment] ADD [invoiceNo] [varchar](200) NULL",
+    "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[weighment]') AND name = 'lrNo') ALTER TABLE [dbo].[weighment] ADD [lrNo] [varchar](200) NULL"
+  ];
+  // Fix template_detail: ensure invoiceNo and lrNo ticket fields exist
+  var templateMigrations = [
+    "IF NOT EXISTS (SELECT 1 FROM template_detail WHERE id=40) INSERT INTO template_detail (id, templateId, field, [type], displayName, [row], col, isIncluded, font) VALUES (40, 1, 'invoiceNo', 'ticket-field', 'Invoice No', 4, 40, 1, 'R')",
+    "IF NOT EXISTS (SELECT 1 FROM template_detail WHERE id=41) INSERT INTO template_detail (id, templateId, field, [type], displayName, [row], col, isIncluded, font) VALUES (41, 1, 'lrNo', 'ticket-field', 'LR No', 7, 40, 1, 'R')",
+    "UPDATE template_detail SET displayName='CG POWER & INDUSTRIAL SOLUTION LTD,M6,STAMPING DIVISION,', col=15 WHERE id=22 AND displayName != 'CG POWER & INDUSTRIAL SOLUTION LTD,M6,STAMPING DIVISION,'",
+    "UPDATE template_detail SET displayName='B-110,B-111/B,B112/2,NAGAPUR MIDC,AHILYANAGAR-414111', col=15 WHERE id=23 AND displayName != 'B-110,B-111/B,B112/2,NAGAPUR MIDC,AHILYANAGAR-414111'"
+  ];
+  // Strip legacy "CODE-" prefix from supplier/material/customer in weighment_detail
+  var dataMigrations = [
+    "UPDATE weighment_detail SET supplier = SUBSTRING(supplier, CHARINDEX('-', supplier) + 1, LEN(supplier)) WHERE supplier IS NOT NULL AND CHARINDEX('-', supplier) > 0 AND LEFT(supplier, CHARINDEX('-', supplier) - 1) NOT LIKE '%[^0-9]%'",
+    "UPDATE weighment_detail SET material = SUBSTRING(material, CHARINDEX('-', material) + 1, LEN(material)) WHERE material IS NOT NULL AND CHARINDEX('-', material) > 0 AND LEFT(material, CHARINDEX('-', material) - 1) NOT LIKE '%[^0-9]%'",
+    "UPDATE weighment_detail SET customer = SUBSTRING(customer, CHARINDEX('-', customer) + 1, LEN(customer)) WHERE customer IS NOT NULL AND CHARINDEX('-', customer) > 0 AND LEFT(customer, CHARINDEX('-', customer) - 1) NOT LIKE '%[^0-9]%'"
+  ];
+  for (var stmt of migrations.concat(columnMigrations).concat(templateMigrations).concat(dataMigrations)) {
+    try {
+      await pool.query(stmt);
+    } catch (err) {
+      log.error(err);
+    }
+  }
+}
+
+async function seedMissingTemplateData(pool) {
+  try {
+    var result = await pool.query("SELECT COUNT(*) as cnt FROM ticket_template");
+    if (result.recordset[0].cnt === 0) {
+      console.log('Seeding ticket_template and template_detail...');
+      var data = require("./bootstrap.js");
+      // Insert ticket_template
+      for (var obj of data.seed.ticket_template) {
+        var stmt = data.sqlStmt.ticket_template;
+        for (var k of Object.keys(obj)) {
+          stmt = stmt.replace("{" + k + "}", obj[k]);
+        }
+        stmt = stmt.replace(/'null'/g, "null");
+        try { await pool.query(stmt); } catch (e) { log.error(e); }
+      }
+      // Insert template_detail
+      for (var obj of data.seed.template_detail) {
+        var stmt = data.sqlStmt.template_detail;
+        for (var k of Object.keys(obj)) {
+          stmt = stmt.replace("{" + k + "}", obj[k]);
+        }
+        stmt = stmt.replace(/'null'/g, "null");
+        try { await pool.query(stmt); } catch (e) { log.error(e); }
+      }
+      console.log('Template seeding complete.');
+    }
+  } catch (err) {
+    log.error(err);
+  }
 }
 
 function processResult(queryType, result){
@@ -207,6 +278,9 @@ async function loadEnvDataFromDB() {
         log.error(err);
       }
     }
+    // Auto-fix: run migrations and seed missing data on every startup
+    await runDataMigrations(pool);
+    await seedMissingTemplateData(pool);
   } catch (err) {
     console.log('=== Database Connection Failed ===');
     console.log('Error:', err.message);

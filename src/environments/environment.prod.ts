@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  licenseurl: "https://license-manager.onrender.com",
+  licenseurl: "https://license.agentfloww.com",
   appName: "accubridge",
   appDisplayName: "Accubridge",
   firstAutoRefresh: true,
