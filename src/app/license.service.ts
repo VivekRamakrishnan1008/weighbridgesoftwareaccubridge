@@ -21,7 +21,7 @@ export class LicenseService {
 
   // Static license configuration
   private readonly STATIC_LICENSE_KEY = "ACCUBRIDGE-2024-STATIC-LICENSE-KEY";
-  private readonly USE_STATIC_LICENSE = false; // Set to false to use dynamic licensing
+  private readonly USE_STATIC_LICENSE = true; // Set to false to use dynamic licensing
   private readonly STATIC_LICENSE_EXPIRY = new Date('2099-12-31').getTime() / 1000; // Never expires (year 2099)
 
   constructor(
