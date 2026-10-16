@@ -124,7 +124,7 @@ export class ListEditorComponent implements OnInit {
   export() {
     /* table id is passed over here */
     let element = document.getElementById('reports-table');
-    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
+    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element, { raw: true });
 
     /* generate workbook and add the worksheet */
     const wb: XLSX.WorkBook = XLSX.utils.book_new();

@@ -234,7 +234,20 @@ export class WeighmentReportComponent implements OnInit {
   export() {
     /* table id is passed over here */
     let element = document.getElementById('reports-table');
-    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
+    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element, { raw: true });
+
+    if (ws['!ref']) {
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          if (cell && cell.t === 's' && cell.v.trim() !== '' && !isNaN(Number(cell.v))) {
+            cell.t = 'n';
+            cell.v = Number(cell.v);
+          }
+        }
+      }
+    }
 
     /* generate workbook and add the worksheet */
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
@@ -243,7 +256,7 @@ export class WeighmentReportComponent implements OnInit {
     /* save to file */
     var timestamp = new Date().getTime();
     var filename = `weighment_report_${timestamp}.xlsx`;
-    XLSX.writeFile(wb, filename);``
+    XLSX.writeFile(wb, filename);
   }
 
   getTotalWeight(weightType) {
